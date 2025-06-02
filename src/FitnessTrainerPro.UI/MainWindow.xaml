@@ -5,8 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Фитнес-трекер для тренера" Height="450" Width="800" Loaded="Window_Loaded">
     <Grid>
-
+        <ListView Name="ExercisesListView" Margin="10">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="50"/>
+                    <GridViewColumn Header="Название" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                    <GridViewColumn Header="Группа мышц" DisplayMemberBinding="{Binding MuscleGroup}" Width="150"/>
+                    <GridViewColumn Header="Описание" DisplayMemberBinding="{Binding Description}" Width="300"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
     </Grid>
 </Window>
