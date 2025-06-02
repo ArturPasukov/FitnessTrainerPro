@@ -1,9 +1,8 @@
 ﻿using System.Windows;
-using FitnessTrainerPro.Data; // Для доступа к FitnessDbContext
-using Microsoft.EntityFrameworkCore; // Для ToListAsync() или ToList()
-using System.Linq; // Для ToList()
-// Если будешь добавлять тестовые данные, понадобится:
-// using FitnessTrainerPro.Core.Models;
+using FitnessTrainerPro.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using FitnessTrainerPro.Core.Models; // <--- Этот using очень важен!
 
 namespace FitnessTrainerPro.UI
 {
@@ -16,20 +15,27 @@ namespace FitnessTrainerPro.UI
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // ВРЕМЕННО: Добавим тестовые данные, если база пуста
-            // Закомментируй или удали этот блок после первой успешной проверки
-            using (var dbContext = new FitnessDbContext())
+            try
             {
-                if (!dbContext.Exercises.Any()) // Проверяем, есть ли уже упражнения
+                // ВРЕМЕННО: Добавим тестовые данные, если база пуста
+                using (var dbContext = new FitnessDbContext())
                 {
-                    dbContext.Exercises.Add(new Core.Models.Exercise { Name = "Приседания", MuscleGroup = "Ноги", Description = "Базовое упражнение" });
-                    dbContext.Exercises.Add(new Core.Models.Exercise { Name = "Жим лежа", MuscleGroup = "Грудь", Description = "Для грудных мышц" });
-                    dbContext.SaveChanges();
+                    if (!dbContext.Exercises.Any())
+                    {
+                        // Убедись, что Exercise - это FitnessTrainerPro.Core.Models.Exercise
+                        dbContext.Exercises.Add(new Exercise { Name = "Приседания", MuscleGroup = "Ноги", Description = "Базовое упражнение" });
+                        dbContext.Exercises.Add(new Exercise { Name = "Жим лежа", MuscleGroup = "Грудь", Description = "Для грудных мышц" });
+                        dbContext.SaveChanges();
+                    }
                 }
-            }
-            // Конец временного блока
+                // Конец временного блока
 
-            LoadExercises();
+                LoadExercises();
+            }
+            catch (System.Exception ex) 
+            {
+                MessageBox.Show($"Произошла ошибка при загрузке данных: {ex.ToString()}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void LoadExercises()
