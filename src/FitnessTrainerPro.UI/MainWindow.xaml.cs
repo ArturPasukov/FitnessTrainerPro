@@ -2,7 +2,9 @@
 using FitnessTrainerPro.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using FitnessTrainerPro.Core.Models; // Остается нужным
+using FitnessTrainerPro.Core.Models;
+using System.Diagnostics; // Для Process.Start
+using System.Windows.Navigation; // Для RequestNavigateEventArgs
 
 namespace FitnessTrainerPro.UI
 {
@@ -52,42 +54,32 @@ namespace FitnessTrainerPro.UI
 
         private void EditExerciseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Получаем выбранное упражнение из ListView
-            // Добавляем '?' для указания, что selectedExercise может быть null
-            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise; 
+            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise;
             if (selectedExercise == null)
             {
                 MessageBox.Show("Пожалуйста, выберите упражнение для редактирования.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            // Exercise exerciseToEdit = selectedExercise; // Эта строка не обязательна, т.к. selectedExercise уже не null
-                                                       // и мы его передаем напрямую
-
-            ExerciseWindow exerciseWindow = new ExerciseWindow(selectedExercise); // Передаем упражнение в окно
+            ExerciseWindow exerciseWindow = new ExerciseWindow(selectedExercise);
             exerciseWindow.Owner = this;
 
             if (exerciseWindow.ShowDialog() == true)
             {
-                // CurrentExercise в exerciseWindow это тот же объект selectedExercise, который был изменен
                 using (var dbContext = new FitnessDbContext())
                 {
-                    // Так как exerciseWindow.CurrentExercise - это тот же объект, что и selectedExercise,
-                    // который был получен из предыдущего контекста (неявно, через ListView),
-                    // EF Core может не отследить его изменения, если контекст создается заново.
-                    // Поэтому лучше найти объект в текущем контексте и обновить его свойства.
                     var exerciseInDb = dbContext.Exercises.Find(selectedExercise.ExerciseID);
                     if (exerciseInDb != null)
                     {
-                        exerciseInDb.Name = exerciseWindow.CurrentExercise.Name; 
+                        exerciseInDb.Name = exerciseWindow.CurrentExercise.Name;
                         exerciseInDb.MuscleGroup = exerciseWindow.CurrentExercise.MuscleGroup;
                         exerciseInDb.Description = exerciseWindow.CurrentExercise.Description;
-                        // Добавить другие поля если есть (например, VideoUrl, EquipmentNeeded позже)
+                        exerciseInDb.VideoUrl = exerciseWindow.CurrentExercise.VideoUrl;
+                        exerciseInDb.EquipmentNeeded = exerciseWindow.CurrentExercise.EquipmentNeeded;
                         dbContext.SaveChanges();
                     }
                     else
                     {
-                        // Обработка случая, если упражнение было удалено другим пользователем/процессом
                         MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
@@ -97,8 +89,7 @@ namespace FitnessTrainerPro.UI
 
         private void DeleteExerciseButton_Click(object sender, RoutedEventArgs e)
         {
-            // Добавляем '?' для указания, что selectedExercise может быть null
-            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise; 
+            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise;
             if (selectedExercise == null)
             {
                 MessageBox.Show("Пожалуйста, выберите упражнение для удаления.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -127,6 +118,24 @@ namespace FitnessTrainerPro.UI
                 }
                 LoadExercises();
             }
+        }
+
+        // ВОТ ЭТОТ МЕТОД ДОЛЖЕН БЫТЬ В КЛАССЕ MainWindow
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            if (e.Uri != null && !string.IsNullOrEmpty(e.Uri.AbsoluteUri))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show($"Не удалось открыть ссылку: {e.Uri.AbsoluteUri}\nОшибка: {ex.Message}",
+                                    "Ошибка открытия ссылки", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            e.Handled = true; // Помечаем, что мы обработали событие навигации
         }
     }
 }

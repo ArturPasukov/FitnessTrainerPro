@@ -4,11 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
-        xmlns:converters="clr-namespace:FitnessTrainerPro.UI.Converters" <!-- ДОБАВЛЕНО ЭТО ПРОСТРАНСТВО ИМЕН -->
+        xmlns:converters="clr-namespace:FitnessTrainerPro.UI.Converters"
         mc:Ignorable="d"
         Title="Фитнес-трекер для тренера" Height="450" Width="800" Loaded="Window_Loaded">
 
-    <Window.Resources> <!-- ДОБАВЛЕН ЭТОТ РАЗДЕЛ С РЕСУРСАМИ -->
+    <Window.Resources>
         <converters:IsNullOrEmptyStringConverter x:Key="IsNullOrEmptyStringConverter"/>
         <converters:IsNotNullOrEmptyToBoolConverter x:Key="IsNotNullOrEmptyToBoolConverter"/>
     </Window.Resources>
@@ -27,40 +27,24 @@
                     <GridViewColumn Header="Название" DisplayMemberBinding="{Binding Name}" Width="130"/>
                     <GridViewColumn Header="Группа мышц" DisplayMemberBinding="{Binding MuscleGroup}" Width="100"/>
                     
-                    <!-- ИЗМЕНЕННЫЙ СТОЛБЕЦ ДЛЯ URL ВИДЕО -->
                     <GridViewColumn Header="URL Видео" Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <!-- Этот TextBlock будет виден, если VideoUrl ПУСТОЙ (скрываем Hyperlink) -->
-                                <TextBlock Text="{Binding VideoUrl}">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding VideoUrl, Converter={StaticResource IsNullOrEmptyStringConverter}}" Value="False">
-                                                    <!-- Если VideoUrl НЕ пустой, скрываем этот TextBlock -->
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
+                                <TextBlock> <!-- Обертка для Hyperlink -->
+                                    <Hyperlink NavigateUri="{Binding VideoUrl}" RequestNavigate="Hyperlink_RequestNavigate">
+                                        <TextBlock Text="{Binding VideoUrl}" />
+                                        <Hyperlink.Style>
+                                            <Style TargetType="Hyperlink">
+                                                <Setter Property="IsEnabled" Value="False"/> <!-- По умолчанию неактивен -->
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding VideoUrl, Converter={StaticResource IsNotNullOrEmptyToBoolConverter}}" Value="True">
+                                                        <Setter Property="IsEnabled" Value="True"/> <!-- Активируем, если URL есть -->
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Hyperlink.Style>
+                                    </Hyperlink>
                                 </TextBlock>
-                                <!-- Этот Hyperlink будет виден, если VideoUrl НЕ ПУСТОЙ -->
-                                <Hyperlink NavigateUri="{Binding VideoUrl}" RequestNavigate="Hyperlink_RequestNavigate"
-                                           IsEnabled="{Binding VideoUrl, Converter={StaticResource IsNotNullOrEmptyToBoolConverter}}">
-                                    <Hyperlink.Style>
-                                        <Style TargetType="Hyperlink">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding VideoUrl, Converter={StaticResource IsNullOrEmptyStringConverter}}" Value="False">
-                                                     <!-- Если VideoUrl НЕ пустой, показываем Hyperlink -->
-                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Hyperlink.Style>
-                                    <TextBlock Text="{Binding VideoUrl}" />
-                                </Hyperlink>
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
