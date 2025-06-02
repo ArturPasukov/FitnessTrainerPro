@@ -15,12 +15,18 @@
 
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Name="AddExerciseButton" Content="Добавить" Width="100" Margin="5" Click="AddExerciseButton_Click"/>
-            <Button Name="EditExerciseButton" Content="Редактировать" Width="100" Margin="5" Click="EditExerciseButton_Click"/>
-            <Button Name="DeleteExerciseButton" Content="Удалить" Width="100" Margin="5" Click="DeleteExerciseButton_Click"/>
+            <!-- Кнопки для упражнений -->
+            <Button Name="AddExerciseButton" Content="Добавить упр." Width="120" Margin="5" Click="AddExerciseButton_Click"/>
+            <Button Name="EditExerciseButton" Content="Редакт. упр." Width="120" Margin="5" Click="EditExerciseButton_Click"/>
+            <Button Name="DeleteExerciseButton" Content="Удалить упр." Width="120" Margin="5" Click="DeleteExerciseButton_Click"/>
+            <!-- Разделитель или просто отступ -->
+            <Separator Width="20" Visibility="Hidden"/> 
+            <!-- НОВАЯ КНОПКА ДЛЯ КЛИЕНТОВ -->
+            <Button Name="ManageClientsButton" Content="Управление клиентами" Width="180" Margin="5" Click="ManageClientsButton_Click"/>
         </StackPanel>
 
         <ListView Name="ExercisesListView" DockPanel.Dock="Top">
+            <!-- ... остальная часть ListView для упражнений без изменений ... -->
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="40"/>
@@ -30,15 +36,15 @@
                     <GridViewColumn Header="URL Видео" Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock> <!-- Обертка для Hyperlink -->
+                                <TextBlock> 
                                     <Hyperlink NavigateUri="{Binding VideoUrl}" RequestNavigate="Hyperlink_RequestNavigate">
                                         <TextBlock Text="{Binding VideoUrl}" />
                                         <Hyperlink.Style>
                                             <Style TargetType="Hyperlink">
-                                                <Setter Property="IsEnabled" Value="False"/> <!-- По умолчанию неактивен -->
+                                                <Setter Property="IsEnabled" Value="False"/> 
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding VideoUrl, Converter={StaticResource IsNotNullOrEmptyToBoolConverter}}" Value="True">
-                                                        <Setter Property="IsEnabled" Value="True"/> <!-- Активируем, если URL есть -->
+                                                        <Setter Property="IsEnabled" Value="True"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
