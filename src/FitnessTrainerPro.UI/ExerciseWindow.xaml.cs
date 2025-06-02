@@ -12,7 +12,9 @@ namespace FitnessTrainerPro.UI
         {
             InitializeComponent();
             CurrentExercise = new Exercise(); // Создаем новый пустой объект
-            this.DataContext = CurrentExercise; // Для простой привязки, если решим использовать
+            // Если в будущем будешь использовать DataBinding напрямую к свойствам CurrentExercise в XAML,
+            // то можно раскомментировать:
+            // this.DataContext = CurrentExercise; 
         }
 
         // Конструктор для редактирования существующего упражнения
@@ -25,6 +27,8 @@ namespace FitnessTrainerPro.UI
             NameTextBox.Text = CurrentExercise.Name;
             MuscleGroupTextBox.Text = CurrentExercise.MuscleGroup;
             DescriptionTextBox.Text = CurrentExercise.Description;
+            VideoUrlTextBox.Text = CurrentExercise.VideoUrl; // Добавлено
+            EquipmentNeededTextBox.Text = CurrentExercise.EquipmentNeeded; // Добавлено
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
@@ -33,6 +37,8 @@ namespace FitnessTrainerPro.UI
             CurrentExercise.Name = NameTextBox.Text;
             CurrentExercise.MuscleGroup = MuscleGroupTextBox.Text;
             CurrentExercise.Description = DescriptionTextBox.Text;
+            CurrentExercise.VideoUrl = VideoUrlTextBox.Text; // Добавлено
+            CurrentExercise.EquipmentNeeded = EquipmentNeededTextBox.Text; // Добавлено
             
             // Простая валидация
             if (string.IsNullOrWhiteSpace(CurrentExercise.Name))
@@ -40,6 +46,14 @@ namespace FitnessTrainerPro.UI
                 MessageBox.Show("Название упражнения не может быть пустым.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+
+            // Можно добавить валидацию для URL, если нужно
+            // if (!string.IsNullOrWhiteSpace(CurrentExercise.VideoUrl) && 
+            //     !System.Uri.IsWellFormedUriString(CurrentExercise.VideoUrl, System.UriKind.Absolute))
+            // {
+            //     MessageBox.Show("URL видео введен некорректно.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            //     return;
+            // }
 
             this.DialogResult = true; // Указываем, что пользователь нажал OK
         }
