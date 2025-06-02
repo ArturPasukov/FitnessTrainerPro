@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FitnessTrainerPro.Data.Migrations
 {
     [DbContext(typeof(FitnessDbContext))]
-    [Migration("20250602094634_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250602102107_InitialDatabaseSetup")]
+    partial class InitialDatabaseSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
