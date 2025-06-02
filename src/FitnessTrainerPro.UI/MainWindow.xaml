@@ -16,9 +16,15 @@
         <ListView Name="ExercisesListView" DockPanel.Dock="Top">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="50"/>
-                    <GridViewColumn Header="Название" DisplayMemberBinding="{Binding Name}" Width="200"/>
-                    <GridViewColumn Header="Группа мышц" DisplayMemberBinding="{Binding MuscleGroup}" Width="150"/>
+                    <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="40"/>
+                    <GridViewColumn Header="Название" DisplayMemberBinding="{Binding Name}" Width="130"/>
+                    <GridViewColumn Header="Группа мышц" DisplayMemberBinding="{Binding MuscleGroup}" Width="100"/>
+                    
+                    <!-- НАЧАЛО ДОБАВЛЕННЫХ СТОЛБЦОВ -->
+                    <GridViewColumn Header="URL Видео" DisplayMemberBinding="{Binding VideoUrl}" Width="130"/>
+                    <GridViewColumn Header="Инвентарь" DisplayMemberBinding="{Binding EquipmentNeeded}" Width="100"/> 
+                    <!-- КОНЕЦ ДОБАВЛЕННЫХ СТОЛБЦОВ -->
+                    
                     <GridViewColumn Header="Описание" DisplayMemberBinding="{Binding Description}" Width="Auto"/>
                 </GridView>
             </ListView.View>
