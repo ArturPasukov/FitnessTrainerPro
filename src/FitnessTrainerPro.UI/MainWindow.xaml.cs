@@ -3,15 +3,11 @@ using FitnessTrainerPro.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using FitnessTrainerPro.Core.Models; // Остается нужным
-// using System.Collections.Generic; // Может понадобиться для обновления списка
 
 namespace FitnessTrainerPro.UI
 {
     public partial class MainWindow : Window
     {
-        // Убери временный код добавления данных, если еще не убрал
-        // ... (конструктор и Window_Loaded без временного блока) ...
-
         public MainWindow()
         {
             InitializeComponent();
@@ -33,71 +29,76 @@ namespace FitnessTrainerPro.UI
         {
             using (var dbContext = new FitnessDbContext())
             {
-                // Загружаем упражнения и сразу присваиваем источнику данных ListView
-                // Чтобы избежать проблем с отслеживанием изменений, лучше каждый раз получать новый список
                 ExercisesListView.ItemsSource = dbContext.Exercises.ToList();
             }
         }
 
         private void AddExerciseButton_Click(object sender, RoutedEventArgs e)
         {
-            ExerciseWindow exerciseWindow = new ExerciseWindow(); // Создаем окно для нового упражнения
-            exerciseWindow.Owner = this; // Чтобы окно было модальным относительно главного
+            ExerciseWindow exerciseWindow = new ExerciseWindow();
+            exerciseWindow.Owner = this;
 
-            if (exerciseWindow.ShowDialog() == true) // Показываем окно и ждем результата
+            if (exerciseWindow.ShowDialog() == true)
             {
-                // Если пользователь нажал OK
                 Exercise newExercise = exerciseWindow.CurrentExercise;
                 using (var dbContext = new FitnessDbContext())
                 {
                     dbContext.Exercises.Add(newExercise);
                     dbContext.SaveChanges();
                 }
-                LoadExercises(); // Обновляем список в ListView
+                LoadExercises();
             }
         }
 
         private void EditExerciseButton_Click(object sender, RoutedEventArgs e)
         {
             // Получаем выбранное упражнение из ListView
-            Exercise selectedExercise = ExercisesListView.SelectedItem as Exercise;
+            // Добавляем '?' для указания, что selectedExercise может быть null
+            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise; 
             if (selectedExercise == null)
             {
                 MessageBox.Show("Пожалуйста, выберите упражнение для редактирования.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            // Создаем копию для редактирования, чтобы изменения не затрагивали оригинал до сохранения
-            // Хотя в нашем простом случае ExerciseWindow работает с переданным объектом напрямую
-            Exercise exerciseToEdit = selectedExercise; 
+            // Exercise exerciseToEdit = selectedExercise; // Эта строка не обязательна, т.к. selectedExercise уже не null
+                                                       // и мы его передаем напрямую
 
-            ExerciseWindow exerciseWindow = new ExerciseWindow(exerciseToEdit); // Передаем упражнение в окно
+            ExerciseWindow exerciseWindow = new ExerciseWindow(selectedExercise); // Передаем упражнение в окно
             exerciseWindow.Owner = this;
 
             if (exerciseWindow.ShowDialog() == true)
             {
-                // Пользователь нажал OK, CurrentExercise в exerciseWindow уже обновлен
+                // CurrentExercise в exerciseWindow это тот же объект selectedExercise, который был изменен
                 using (var dbContext = new FitnessDbContext())
                 {
-                    // EF Core отследит изменения в selectedExercise, если он был получен из этого же контекста
-                    // Но для надежности, особенно если контекст пересоздается, лучше так:
+                    // Так как exerciseWindow.CurrentExercise - это тот же объект, что и selectedExercise,
+                    // который был получен из предыдущего контекста (неявно, через ListView),
+                    // EF Core может не отследить его изменения, если контекст создается заново.
+                    // Поэтому лучше найти объект в текущем контексте и обновить его свойства.
                     var exerciseInDb = dbContext.Exercises.Find(selectedExercise.ExerciseID);
                     if (exerciseInDb != null)
                     {
-                        exerciseInDb.Name = exerciseWindow.CurrentExercise.Name; // exerciseWindow.CurrentExercise это тот же selectedExercise
+                        exerciseInDb.Name = exerciseWindow.CurrentExercise.Name; 
                         exerciseInDb.MuscleGroup = exerciseWindow.CurrentExercise.MuscleGroup;
                         exerciseInDb.Description = exerciseWindow.CurrentExercise.Description;
-                        // Добавить другие поля если есть
+                        // Добавить другие поля если есть (например, VideoUrl, EquipmentNeeded позже)
                         dbContext.SaveChanges();
                     }
+                    else
+                    {
+                        // Обработка случая, если упражнение было удалено другим пользователем/процессом
+                        MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
-                LoadExercises(); // Обновляем список
+                LoadExercises();
             }
         }
 
         private void DeleteExerciseButton_Click(object sender, RoutedEventArgs e)
         {
-            Exercise selectedExercise = ExercisesListView.SelectedItem as Exercise;
+            // Добавляем '?' для указания, что selectedExercise может быть null
+            Exercise? selectedExercise = ExercisesListView.SelectedItem as Exercise; 
             if (selectedExercise == null)
             {
                 MessageBox.Show("Пожалуйста, выберите упражнение для удаления.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -113,15 +114,18 @@ namespace FitnessTrainerPro.UI
             {
                 using (var dbContext = new FitnessDbContext())
                 {
-                    // Находим упражнение в базе и удаляем
                     var exerciseToDelete = dbContext.Exercises.Find(selectedExercise.ExerciseID);
                     if (exerciseToDelete != null)
                     {
                         dbContext.Exercises.Remove(exerciseToDelete);
                         dbContext.SaveChanges();
                     }
+                    else
+                    {
+                        MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно уже было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
-                LoadExercises(); // Обновляем список
+                LoadExercises();
             }
         }
     }
