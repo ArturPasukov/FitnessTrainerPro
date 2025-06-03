@@ -81,15 +81,22 @@ namespace FitnessTrainerPro.UI
                             clientInDb.FirstName = clientEditWindow.CurrentClient.FirstName;
                             clientInDb.LastName = clientEditWindow.CurrentClient.LastName;
                             clientInDb.DateOfBirth = clientEditWindow.CurrentClient.DateOfBirth;
-                            // Обновить другие поля позже
+                            clientInDb.PhoneNumber = clientEditWindow.CurrentClient.PhoneNumber; // ИСПРАВЛЕНО
+                            clientInDb.Email = clientEditWindow.CurrentClient.Email;             // ИСПРАВЛЕНО
+                            clientInDb.Goals = clientEditWindow.CurrentClient.Goals;             // ИСПРАВЛЕНО
+                            
                             dbContext.SaveChanges();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Клиент не найден в базе данных. Возможно, он был удален.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                     LoadClients();
                 }
                 catch (System.Exception ex)
                 {
-                    MessageBox.Show($"Ошибка редактирования клиента: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Ошибка редактирования клиента: {ex.Message}\n{ex.InnerException?.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
