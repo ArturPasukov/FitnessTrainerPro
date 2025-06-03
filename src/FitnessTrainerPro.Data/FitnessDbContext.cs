@@ -1,15 +1,21 @@
 // FitnessDbContext.cs
 using Microsoft.EntityFrameworkCore;
 using FitnessTrainerPro.Core.Models;
-using System.IO; // <--- Добавь этот using для Path.Combine
-using System;    // <--- Добавь этот using для Environment
+using System.IO; 
+using System;    
 
 namespace FitnessTrainerPro.Data
 {
     public class FitnessDbContext : DbContext
     {
+        // Существующие DbSet'ы
         public DbSet<Client> Clients { get; set; }
         public DbSet<Exercise> Exercises { get; set; }
+
+        // НОВЫЕ DbSet'ы
+        public DbSet<WorkoutProgram> WorkoutPrograms { get; set; }
+        public DbSet<ProgramExercise> ProgramExercises { get; set; }
+        public DbSet<ClientAssignedProgram> ClientAssignedPrograms { get; set; }
 
         public FitnessDbContext() { }
 
@@ -17,31 +23,56 @@ namespace FitnessTrainerPro.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-                // Определяем путь к папке проекта. Это более надежно, чем жестко задавать.
-                // AppContext.BaseDirectory вернет путь к папке bin/Debug/netX.X/ UI-проекта при запуске UI
-                // Но для dotnet ef команд, лучше отталкиваться от чего-то более стабильного
-                // Давай попробуем путь относительно папки решения или текущей директории,
-                // но для максимальной надежности сейчас зададим явно.
-
-                // Создадим папку Database в корне проекта, если ее нет
-                string projectRootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")); // Пытаемся подняться из bin/Debug/netX.X-windows/UI/src до корня проекта
-                string dbFolderPath = Path.Combine(projectRootPath, "Database");
+                // Твой существующий код для определения пути к БД
+                // Я его не меняю, предполагая, что он у тебя работает корректно
+                string projectRootPathAttempt = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")); 
+                string dbFolderPath = Path.Combine(projectRootPathAttempt, "Database");
                 
-                // Если предыдущий способ определения projectRootPath не сработает корректно с dotnet ef,
-                // можно временно захардкодить или использовать более простой относительный путь для dotnet ef,
-                // например, создавая БД рядом с .sln файлом.
-                // Для простоты отладки сейчас:
-                dbFolderPath = @"C:\Users\lazaa\Desktop\proj1\FitnessTrainerPro\Database"; // <--- ЗАМЕНИ НА СВОЙ ТОЧНЫЙ ПУТЬ К ПАПКЕ ПРОЕКТА + \Database
+                // Использование твоего захардкоженного пути для надежности
+                dbFolderPath = @"C:\Users\lazaa\Desktop\proj1\FitnessTrainerPro\Database"; 
 
                 if (!Directory.Exists(dbFolderPath))
                 {
                     Directory.CreateDirectory(dbFolderPath);
                 }
-                string dbPath = Path.Combine(dbFolderPath, "fitness_trainer_abs.db"); // Новое имя файла, чтобы не путаться
+                string dbPath = Path.Combine(dbFolderPath, "fitness_trainer_abs.db"); 
 
                 optionsBuilder.UseSqlite($"Data Source={dbPath}");
-                // Console.WriteLine($"Using database at: {dbPath}"); // Для отладки пути
             }
+        }
+
+        // НОВЫЙ МЕТОД OnModelCreating
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder); // Важно вызвать базовую реализацию
+
+            // Связь WorkoutProgram <-> ProgramExercise (один-ко-многим)
+            // У WorkoutProgram есть коллекция ProgramExercises
+            modelBuilder.Entity<ProgramExercise>()
+                .HasOne(pe => pe.WorkoutProgram)
+                .WithMany(wp => wp.ProgramExercises) // Указываем навигационное свойство в WorkoutProgram
+                .HasForeignKey(pe => pe.ProgramID);
+
+            // Связь Exercise <-> ProgramExercise (один-ко-многим)
+            // У Exercise НЕТ коллекции ProgramExercises в нашей текущей модели
+            modelBuilder.Entity<ProgramExercise>()
+                .HasOne(pe => pe.Exercise)
+                .WithMany() // Оставляем пустым, если в Exercise нет ICollection<ProgramExercise>
+                .HasForeignKey(pe => pe.ExerciseID);
+
+            // Связь Client <-> ClientAssignedProgram (один-ко-многим)
+            // У Client НЕТ коллекции ClientAssignedPrograms в нашей текущей модели
+            modelBuilder.Entity<ClientAssignedProgram>()
+                .HasOne(cap => cap.Client)
+                .WithMany() // Оставляем пустым, если в Client нет ICollection<ClientAssignedProgram>
+                .HasForeignKey(cap => cap.ClientID);
+            
+            // Связь WorkoutProgram <-> ClientAssignedProgram (один-ко-многим)
+            // У WorkoutProgram есть коллекция ClientAssignments
+            modelBuilder.Entity<ClientAssignedProgram>()
+                .HasOne(cap => cap.WorkoutProgram)
+                .WithMany(wp => wp.ClientAssignments) // Указываем навигационное свойство в WorkoutProgram
+                .HasForeignKey(cap => cap.ProgramID);
         }
     }
 }
