@@ -5,9 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="Программа тренировок" Height="600" Width="700" <!-- Увеличим размеры окна -->
+        Title="Программа тренировок" Height="600" Width="700"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="15">
+        <!-- ... остальной код Grid без изменений ... -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Название программы -->
             <RowDefinition Height="Auto"/> <!-- Направленность -->
@@ -41,7 +42,7 @@
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Порядок" DisplayMemberBinding="{Binding OrderInProgram}" Width="60"/>
-                    <GridViewColumn Header="Упражнение" DisplayMemberBinding="{Binding Exercise.Name}" Width="150"/> <!-- Из связанной сущности Exercise -->
+                    <GridViewColumn Header="Упражнение" DisplayMemberBinding="{Binding Exercise.Name}" Width="150"/>
                     <GridViewColumn Header="Сеты" DisplayMemberBinding="{Binding Sets}" Width="50"/>
                     <GridViewColumn Header="Репы" DisplayMemberBinding="{Binding Reps}" Width="80"/>
                     <GridViewColumn Header="Отдых (сек)" DisplayMemberBinding="{Binding RestSeconds}" Width="80"/>
