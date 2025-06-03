@@ -1,10 +1,10 @@
 ﻿using System.Windows;
 using FitnessTrainerPro.Data;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // Важно для DbUpdateException
 using System.Linq;
 using FitnessTrainerPro.Core.Models;
-using System.Diagnostics; // Для Process.Start
-using System.Windows.Navigation; // Для RequestNavigateEventArgs
+using System.Diagnostics; 
+using System.Windows.Navigation; 
 
 namespace FitnessTrainerPro.UI
 {
@@ -23,7 +23,8 @@ namespace FitnessTrainerPro.UI
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show($"Произошла ошибка при загрузке данных: {ex.ToString()}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Оставим ToString() здесь, т.к. это загрузка, и детальная ошибка может быть полезна
+                MessageBox.Show($"Произошла ошибка при первоначальной загрузке данных: {ex.ToString()}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -43,12 +44,28 @@ namespace FitnessTrainerPro.UI
             if (exerciseWindow.ShowDialog() == true)
             {
                 Exercise newExercise = exerciseWindow.CurrentExercise;
-                using (var dbContext = new FitnessDbContext())
+                try // Добавляем try-catch для операции добавления
                 {
-                    dbContext.Exercises.Add(newExercise);
-                    dbContext.SaveChanges();
+                    using (var dbContext = new FitnessDbContext())
+                    {
+                        dbContext.Exercises.Add(newExercise);
+                        dbContext.SaveChanges();
+                    }
+                    LoadExercises();
                 }
-                LoadExercises();
+                catch (System.Exception ex)
+                {
+                    string errorMessage = $"Ошибка добавления упражнения: {ex.Message}";
+                    if (ex.InnerException != null)
+                    {
+                        errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                        if (ex.InnerException.InnerException != null)
+                        {
+                             errorMessage += $"\n\nВложенная внутренняя ошибка: {ex.InnerException.InnerException.Message}";
+                        }
+                    }
+                    MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -66,24 +83,47 @@ namespace FitnessTrainerPro.UI
 
             if (exerciseWindow.ShowDialog() == true)
             {
-                using (var dbContext = new FitnessDbContext())
+                // ДОБАВЛЕН БЛОК TRY-CATCH
+                try
                 {
-                    var exerciseInDb = dbContext.Exercises.Find(selectedExercise.ExerciseID);
-                    if (exerciseInDb != null)
+                    using (var dbContext = new FitnessDbContext())
                     {
-                        exerciseInDb.Name = exerciseWindow.CurrentExercise.Name;
-                        exerciseInDb.MuscleGroup = exerciseWindow.CurrentExercise.MuscleGroup;
-                        exerciseInDb.Description = exerciseWindow.CurrentExercise.Description;
-                        exerciseInDb.VideoUrl = exerciseWindow.CurrentExercise.VideoUrl;
-                        exerciseInDb.EquipmentNeeded = exerciseWindow.CurrentExercise.EquipmentNeeded;
-                        dbContext.SaveChanges();
+                        var exerciseInDb = dbContext.Exercises.Find(selectedExercise.ExerciseID);
+                        if (exerciseInDb != null)
+                        {
+                            exerciseInDb.Name = exerciseWindow.CurrentExercise.Name;
+                            exerciseInDb.MuscleGroup = exerciseWindow.CurrentExercise.MuscleGroup;
+                            exerciseInDb.Description = exerciseWindow.CurrentExercise.Description;
+                            exerciseInDb.VideoUrl = exerciseWindow.CurrentExercise.VideoUrl;
+                            exerciseInDb.EquipmentNeeded = exerciseWindow.CurrentExercise.EquipmentNeeded;
+                            
+                            dbContext.SaveChanges();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
-                    else
-                    {
-                        MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    LoadExercises(); 
                 }
-                LoadExercises();
+                catch (DbUpdateException dbEx) // Ловим специфичные ошибки обновления БД
+                {
+                    string errorMessage = $"Ошибка обновления упражнения в базе данных: {dbEx.Message}";
+                    if (dbEx.InnerException != null)
+                    {
+                        errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                    }
+                    MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (System.Exception ex) // Ловим все остальные ошибки
+                {
+                    string errorMessage = $"Общая ошибка при редактировании упражнения: {ex.Message}";
+                    if (ex.InnerException != null)
+                    {
+                        errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                    }
+                    MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -103,24 +143,44 @@ namespace FitnessTrainerPro.UI
 
             if (result == MessageBoxResult.Yes)
             {
-                using (var dbContext = new FitnessDbContext())
+                try // Добавляем try-catch для операции удаления
                 {
-                    var exerciseToDelete = dbContext.Exercises.Find(selectedExercise.ExerciseID);
-                    if (exerciseToDelete != null)
+                    using (var dbContext = new FitnessDbContext())
                     {
-                        dbContext.Exercises.Remove(exerciseToDelete);
-                        dbContext.SaveChanges();
+                        var exerciseToDelete = dbContext.Exercises.Find(selectedExercise.ExerciseID);
+                        if (exerciseToDelete != null)
+                        {
+                            dbContext.Exercises.Remove(exerciseToDelete);
+                            dbContext.SaveChanges();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно уже было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                        }
                     }
-                    else
-                    {
-                        MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно уже было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
+                    LoadExercises();
                 }
-                LoadExercises();
+                catch (DbUpdateException dbEx)
+                {
+                    string errorMessage = $"Ошибка удаления упражнения из базы данных: {dbEx.Message}";
+                    if (dbEx.InnerException != null)
+                    {
+                        errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                    }
+                    MessageBox.Show(errorMessage, "Ошибка удаления", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (System.Exception ex)
+                {
+                     string errorMessage = $"Общая ошибка при удалении упражнения: {ex.Message}";
+                    if (ex.InnerException != null)
+                    {
+                        errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                    }
+                    MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
-        // ВОТ ЭТОТ МЕТОД ДОЛЖЕН БЫТЬ В КЛАССЕ MainWindow
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
         {
             if (e.Uri != null && !string.IsNullOrEmpty(e.Uri.AbsoluteUri))
@@ -135,24 +195,21 @@ namespace FitnessTrainerPro.UI
                                     "Ошибка открытия ссылки", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
-            e.Handled = true; // Помечаем, что мы обработали событие навигации
+            e.Handled = true; 
         }
         
-
-        
-    private void ManageClientsButton_Click(object sender, RoutedEventArgs e)
+        private void ManageClientsButton_Click(object sender, RoutedEventArgs e)
         {
             ClientManagementWindow clientManagementWindow = new ClientManagementWindow();
-            clientManagementWindow.Owner = this; // Чтобы новое окно было связано с главным
-            // clientManagementWindow.Show(); // Открывает немодально
-            clientManagementWindow.ShowDialog(); // Открывает модально, блокируя главное окно
+            clientManagementWindow.Owner = this; 
+            clientManagementWindow.ShowDialog(); 
         }
         
-    private void ManageProgramsButton_Click(object sender, RoutedEventArgs e)
+        private void ManageProgramsButton_Click(object sender, RoutedEventArgs e)
         {
             WorkoutProgramManagementWindow programManagementWindow = new WorkoutProgramManagementWindow();
             programManagementWindow.Owner = this;
             programManagementWindow.ShowDialog();
         }
-    } // Конец класса MainWindow
-} // Конец namespace
+    } 
+}
