@@ -2,7 +2,8 @@ using System.Windows;
 using FitnessTrainerPro.Core.Models;
 using FitnessTrainerPro.Data;
 using System.Linq;
-using Microsoft.EntityFrameworkCore; 
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic; // Для List и ToHashSet
 
 namespace FitnessTrainerPro.UI
 {
@@ -24,12 +25,12 @@ namespace FitnessTrainerPro.UI
             {
                 using (var dbContext = new FitnessDbContext())
                 {
-                    ProgramsListView.ItemsSource = dbContext.WorkoutPrograms.ToList();
+                    ProgramsListView.ItemsSource = dbContext.WorkoutPrograms.AsNoTracking().ToList(); // AsNoTracking для списка только для чтения
                 }
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки списка программ: {ex.ToString()}", "Ошибка загрузки", MessageBoxButton.OK, MessageBoxImage.Error); // Используем ToString() для большей информации здесь
+                MessageBox.Show($"Ошибка загрузки списка программ: {ex.ToString()}", "Ошибка загрузки", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -40,42 +41,38 @@ namespace FitnessTrainerPro.UI
 
             if (programEditWindow.ShowDialog() == true)
             {
-                WorkoutProgram newProgram = programEditWindow.CurrentProgram;
+                WorkoutProgram newProgram = programEditWindow.CurrentProgram; // CurrentProgram уже содержит ProgramExercises
                 try
                 {
                     using (var dbContext = new FitnessDbContext())
                     {
-                        // Перед добавлением, если ProgramExercises не пуст,
-                        // установим состояние связанных Exercise как Unchanged, если они уже существуют
-                        // Это нужно, если WorkoutProgramEditWindow заполняет навигационное свойство ProgramExercise.Exercise
+                        // Для каждого ProgramExercise в новой программе, убедимся, что связанный Exercise
+                        // не добавляется заново, если он уже есть в базе.
+                        // Это актуально, если WorkoutProgramEditWindow заполняет ProgramExercise.Exercise
+                        // (хотя мы решили делать ProgramExercise.Exercise = null там)
                         if (newProgram.ProgramExercises != null)
                         {
                             foreach (var pe in newProgram.ProgramExercises)
                             {
-                                if (pe.Exercise != null && pe.Exercise.ExerciseID != 0)
+                                if (pe.Exercise != null && pe.ExerciseID == 0) // Если ExerciseID не установлен, но объект Exercise есть
                                 {
-                                    // Убедимся, что EF Core не пытается создать существующее упражнение заново
-                                    var entry = dbContext.Entry(pe.Exercise);
-                                    if (entry.State == EntityState.Detached) // Если Exercise не отслеживается
-                                    {
-                                        dbContext.Exercises.Attach(pe.Exercise); // Начинаем отслеживать
-                                    }
-                                    // Если Exercise уже отслеживается, его состояние должно быть корректным (Unchanged)
-                                    // Если оно Added - будет ошибка.
-                                    // Проще всего было бы в WorkoutProgramEditWindow в newProgramExercise.Exercise присваивать null,
-                                    // а здесь EF Core сам бы связал по pe.ExerciseID.
-                                    // Мы это уже сделали в WorkoutProgramEditWindow (newProgramExercise.Exercise = null;), так что этот блок может быть не нужен,
-                                    // но оставим его для демонстрации, если бы навигационное свойство было заполнено.
-                                    // Для нашего текущего кода, где ProgramExercise.Exercise = null, этот блок не сделает ничего плохого.
+                                     pe.ExerciseID = pe.Exercise.ExerciseID; // Убедимся, что ExerciseID взят из объекта
                                 }
+                                if (pe.ExerciseID == 0)
+                                {
+                                     MessageBox.Show($"Упражнение '{pe.Exercise?.Name ?? "Без имени"}' не имеет ID. Программа не будет сохранена корректно.", "Ошибка данных");
+                                     return; // Прерываем сохранение
+                                }
+                                pe.Exercise = null; // Убираем ссылку на объект Exercise, чтобы EF Core связал по ExerciseID
                             }
                         }
+                        
                         dbContext.WorkoutPrograms.Add(newProgram);
                         dbContext.SaveChanges();
                     }
                     LoadPrograms(); 
                 }
-                catch (DbUpdateException dbEx) // Ловим специфичные ошибки обновления БД
+                catch (DbUpdateException dbEx)
                 {
                     string errorMessage = $"Ошибка добавления программы (DB): {dbEx.Message}";
                     if (dbEx.InnerException != null)
@@ -84,7 +81,7 @@ namespace FitnessTrainerPro.UI
                     }
                     MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                catch (System.Exception ex) // Ловим все остальные ошибки
+                catch (System.Exception ex) 
                 {
                     string errorMessage = $"Общая ошибка добавления программы: {ex.Message}";
                     if (ex.InnerException != null)
@@ -109,21 +106,22 @@ namespace FitnessTrainerPro.UI
                 return;
             }
 
-            WorkoutProgram? programWithDetails;
+            WorkoutProgram? programWithDetails; // Этот объект будет передан в окно редактирования
             try
             {
                 using (var dbContext = new FitnessDbContext())
                 {
+                    // Загружаем программу со всеми деталями для редактирования, но без отслеживания
                     programWithDetails = dbContext.WorkoutPrograms
                                                 .Include(p => p.ProgramExercises) 
                                                     .ThenInclude(pe => pe.Exercise) 
-                                                .AsNoTracking() // Загружаем для редактирования, но не отслеживаем
+                                                .AsNoTracking() 
                                                 .FirstOrDefault(p => p.ProgramID == selectedProgram.ProgramID);
                 }
 
                 if (programWithDetails == null)
                 {
-                    MessageBox.Show("Выбранная программа не найдена в базе данных.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show("Выбранная программа не найдена в базе данных. Возможно, она была удалена.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                     LoadPrograms(); 
                     return;
                 }
@@ -139,77 +137,84 @@ namespace FitnessTrainerPro.UI
 
             if (programEditWindow.ShowDialog() == true)
             {
-                WorkoutProgram editedProgramFromDialog = programEditWindow.CurrentProgram;
+                // programEditWindow.CurrentProgram содержит программу с изменениями, включая измененный список ProgramExercises
+                WorkoutProgram editedProgramFromDialog = programEditWindow.CurrentProgram; 
                 try
                 {
                     using (var dbContext = new FitnessDbContext())
                     {
-                        // Обновление WorkoutProgram
-                        dbContext.WorkoutPrograms.Update(editedProgramFromDialog); // Помечаем программу и ее ProgramExercises как измененные
-
-                        // Логика синхронизации коллекции ProgramExercises (удаление, добавление, обновление)
-                        // Это сложная часть, которую нужно будет реализовать более детально.
-                        // Пока что .Update() попытается сохранить граф как есть.
-                        // Если ProgramExercises были изменены (добавлены/удалены элементы в списке),
-                        // то Update может не справиться корректно без дополнительной логики.
-
-                        // Пример более явного управления:
+                        // Загружаем существующую программу из базы для обновления (с отслеживанием)
                         var programInDb = dbContext.WorkoutPrograms
                                                  .Include(p => p.ProgramExercises)
                                                  .FirstOrDefault(p => p.ProgramID == editedProgramFromDialog.ProgramID);
 
                         if (programInDb != null)
                         {
-                            // Обновляем основные поля
+                            // Обновляем основные поля самой программы
                             programInDb.Name = editedProgramFromDialog.Name;
                             programInDb.Description = editedProgramFromDialog.Description;
                             programInDb.Focus = editedProgramFromDialog.Focus;
 
-                            // --- Начало сложной логики синхронизации ProgramExercises ---
-                            // 1. Удаляем те, что были в базе, но нет в новом списке
-                            var exercisesToRemove = programInDb.ProgramExercises
-                                .Where(peDb => !editedProgramFromDialog.ProgramExercises.Any(peEdited => peEdited.ProgramExerciseID != 0 && peEdited.ProgramExerciseID == peDb.ProgramExerciseID))
-                                .ToList();
-                            foreach (var exToRemove in exercisesToRemove)
+                            // --- Начало логики синхронизации ProgramExercises ---
+                            
+                            // Список ProgramExerciseID из отредактированной программы (только для существующих)
+                            var editedPeIds = editedProgramFromDialog.ProgramExercises
+                                                .Where(pe => pe.ProgramExerciseID != 0)
+                                                .Select(pe => pe.ProgramExerciseID)
+                                                .ToHashSet();
+
+                            // 1. Удаляем те ProgramExercise, которые есть в базе (programInDb.ProgramExercises),
+                            // но отсутствуют в отредактированном списке (editedPeIds)
+                            var exercisesInDbToRemove = new List<ProgramExercise>();
+                            foreach (var dbPe in programInDb.ProgramExercises.ToList()) // ToList() для безопасного изменения коллекции
                             {
-                                dbContext.ProgramExercises.Remove(exToRemove);
+                                if (!editedPeIds.Contains(dbPe.ProgramExerciseID))
+                                {
+                                    exercisesInDbToRemove.Add(dbPe);
+                                }
+                            }
+                            if (exercisesInDbToRemove.Any())
+                            {
+                                dbContext.ProgramExercises.RemoveRange(exercisesInDbToRemove);
                             }
 
-                            // 2. Обновляем существующие и добавляем новые
+                            // 2. Обновляем существующие и добавляем новые ProgramExercise
                             foreach (var editedPe in editedProgramFromDialog.ProgramExercises)
                             {
-                                if (editedPe.ProgramExerciseID != 0) // Существующее упражнение
+                                if (editedPe.ProgramExerciseID != 0) // Существующее упражнение (было в базе)
                                 {
-                                    var dbPe = programInDb.ProgramExercises.FirstOrDefault(pe => pe.ProgramExerciseID == editedPe.ProgramExerciseID);
-                                    if (dbPe != null)
+                                    var dbPe = programInDb.ProgramExercises.FirstOrDefault(p => p.ProgramExerciseID == editedPe.ProgramExerciseID);
+                                    if (dbPe != null) // Оно должно быть найдено, если мы его не удалили выше
                                     {
+                                        // Обновляем свойства существующего ProgramExercise
                                         dbPe.OrderInProgram = editedPe.OrderInProgram;
                                         dbPe.Sets = editedPe.Sets;
                                         dbPe.Reps = editedPe.Reps;
                                         dbPe.RestSeconds = editedPe.RestSeconds;
                                         dbPe.Notes = editedPe.Notes;
-                                        // ExerciseID не должен меняться для существующего ProgramExercise
+                                        // ExerciseID и ProgramID не должны меняться для существующей записи ProgramExercise
                                     }
                                 }
-                                else // Новое упражнение для программы
+                                else // Новое упражнение для программы (ProgramExerciseID == 0)
                                 {
-                                    // Убедимся, что ExerciseID корректен и Exercise не добавляется заново
-                                    if (editedPe.Exercise != null && editedPe.Exercise.ExerciseID != 0)
+                                    // Убедимся, что ExerciseID корректен
+                                    if (editedPe.ExerciseID == 0)
                                     {
-                                       var entry = dbContext.Entry(editedPe.Exercise);
-                                       if(entry.State == EntityState.Detached) dbContext.Exercises.Attach(editedPe.Exercise);
+                                        MessageBox.Show($"Ошибка: Упражнение '{editedPe.Exercise?.Name ?? "Без имени"}' в программе не имеет корректного ExerciseID и не может быть добавлено.", "Ошибка данных");
+                                        continue; // Пропускаем это упражнение, не добавляем
                                     }
-                                    else if (editedPe.ExerciseID == 0 && editedPe.Exercise != null)
-                                    {
-                                        // Если ExerciseID 0, но объект Exercise есть, это ошибка
-                                        throw new InvalidOperationException("Новое упражнение в программе не имеет корректного ExerciseID.");
-                                    }
-                                    editedPe.Exercise = null; // Отсоединяем объект Exercise, полагаемся на ExerciseID
-
-                                    programInDb.ProgramExercises.Add(editedPe); // EF Core установит ProgramID
+                                    
+                                    // Устанавливаем навигационное свойство Exercise в null, чтобы EF Core связал по ExerciseID
+                                    // и не пытался создать новый Exercise, если объект Exercise был передан.
+                                    // Это уже должно быть сделано в WorkoutProgramEditWindow.
+                                    editedPe.Exercise = null; 
+                                    
+                                    // Добавляем новый ProgramExercise в отслеживаемую коллекцию programInDb.ProgramExercises
+                                    // EF Core автоматически установит ProgramID и пометит как Added.
+                                    programInDb.ProgramExercises.Add(editedPe);
                                 }
                             }
-                            // --- Конец сложной логики синхронизации ProgramExercises ---
+                            // --- Конец логики синхронизации ProgramExercises ---
                             
                             dbContext.SaveChanges();
                         }
@@ -222,6 +227,10 @@ namespace FitnessTrainerPro.UI
                     if (dbEx.InnerException != null)
                     {
                         errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                         if (dbEx.InnerException.InnerException != null)
+                        {
+                             errorMessage += $"\n\nВложенная внутренняя ошибка БД: {dbEx.InnerException.InnerException.Message}";
+                        }
                     }
                     MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
@@ -261,22 +270,17 @@ namespace FitnessTrainerPro.UI
                 {
                     using (var dbContext = new FitnessDbContext())
                     {
-                        // Важно: чтобы EF Core корректно обработал каскадное удаление или удалил зависимые сущности,
-                        // сначала нужно загрузить программу со всеми зависимостями, которые мы хотим удалить явно,
-                        // или убедиться, что каскадное удаление настроено на уровне БД/EF Core.
-                        // Простое `Find` и `Remove` может не удалить ProgramExercises, если нет каскадного удаления.
                         var programToDelete = dbContext.WorkoutPrograms
-                                                     .Include(p => p.ProgramExercises) // Включаем для явного удаления или для срабатывания каскада EF Core
-                                                     .Include(p => p.ClientAssignments) // Аналогично
+                                                     .Include(p => p.ProgramExercises) 
+                                                     .Include(p => p.ClientAssignments) 
                                                      .FirstOrDefault(p => p.ProgramID == selectedProgram.ProgramID);
 
                         if (programToDelete != null)
                         {
-                            // Если нет каскадного удаления на уровне БД, и мы хотим удалить связанные ProgramExercises:
-                            // dbContext.ProgramExercises.RemoveRange(programToDelete.ProgramExercises);
-                            // Если нет каскадного удаления на уровне БД, и мы хотим удалить связанные ClientAssignments:
-                            // dbContext.ClientAssignedPrograms.RemoveRange(programToDelete.ClientAssignments);
-                            
+                            // EF Core должен сам обработать удаление связанных ProgramExercises и ClientAssignments,
+                            // если связи настроены как обязательные (не nullable FK) или с каскадным удалением.
+                            // Для ProgramExercises -> ProgramID обязателен, так что они должны удалиться.
+                            // Для ClientAssignments -> ProgramID обязателен, так что они тоже должны удалиться.
                             dbContext.WorkoutPrograms.Remove(programToDelete);
                             dbContext.SaveChanges();
                         }
@@ -289,6 +293,10 @@ namespace FitnessTrainerPro.UI
                     if (dbEx.InnerException != null)
                     {
                         errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                         if (dbEx.InnerException.InnerException != null)
+                        {
+                             errorMessage += $"\n\nВложенная внутренняя ошибка БД: {dbEx.InnerException.InnerException.Message}";
+                        }
                     }
                     MessageBox.Show(errorMessage, "Ошибка удаления", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
