@@ -1,0 +1,34 @@
+<Window x:Class="FitnessTrainerPro.UI.AnalyticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FitnessTrainerPro.UI"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+        mc:Ignorable="d"
+        Title="Аналитика прогресса" Height="600" Width="800"
+        WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Панель выбора клиента и дат -->
+            <RowDefinition Height="*"/>    <!-- График -->
+        </Grid.RowDefinitions>
+
+        <!-- Панель фильтров -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Label Content="Клиент:" VerticalAlignment="Center"/>
+            <ComboBox Name="ClientsComboBox" Width="200" Margin="5,0" VerticalAlignment="Center" DisplayMemberPath="FullName" SelectionChanged="ClientsComboBox_SelectionChanged"/> 
+            <!-- FullName - это свойство, которое нам нужно будет добавить в модель Client или ViewModel -->
+            
+            <Label Content="С:" Margin="10,0,0,0" VerticalAlignment="Center"/>
+            <DatePicker Name="StartDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" SelectedDateChanged="Dates_SelectedDateChanged"/>
+            
+            <Label Content="По:" Margin="10,0,0,0" VerticalAlignment="Center"/>
+            <DatePicker Name="EndDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" SelectedDateChanged="Dates_SelectedDateChanged"/>
+        </StackPanel>
+
+        <!-- График веса -->
+        <lvc:CartesianChart Name="WeightChart" Grid.Row="1" />
+
+    </Grid>
+</Window>

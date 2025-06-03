@@ -127,16 +127,16 @@ namespace FitnessTrainerPro.UI
                         BitmapImage bitmap = new BitmapImage();
                         bitmap.BeginInit();
                         bitmap.UriSource = new Uri(fullPath, UriKind.Absolute);
-                        bitmap.CacheOption = BitmapCacheOption.OnLoad; // Чтобы файл не был заблокирован
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad; 
                         bitmap.EndInit();
                         imageControl.Source = bitmap;
-                        pathTextBlock.Text = photoFileName; // Показываем только имя файла
+                        pathTextBlock.Text = photoFileName; 
                     }
-                    catch (Exception ex)
+                    catch (Exception ex) // ex теперь используется
                     {
                         imageControl.Source = null;
                         pathTextBlock.Text = "Ошибка загрузки фото";
-                        // MessageBox.Show($"Ошибка отображения фото: {ex.Message}", "Ошибка"); // Можно раскомментировать для отладки
+                        System.Diagnostics.Debug.WriteLine($"Ошибка отображения фото '{photoFileName}': {ex.Message}"); // Используем ex
                     }
                 }
                 else
@@ -151,7 +151,6 @@ namespace FitnessTrainerPro.UI
                 pathTextBlock.Text = string.Empty;
             }
         }
-
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {

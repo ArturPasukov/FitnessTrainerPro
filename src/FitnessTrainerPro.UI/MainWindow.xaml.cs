@@ -5,7 +5,6 @@ using System.Linq;
 using FitnessTrainerPro.Core.Models;
 using System.Diagnostics;
 using System.Windows.Navigation;
-// using System.Windows.Controls; // Может понадобиться, если будешь использовать TextChanged для авто-фильтрации
 
 namespace FitnessTrainerPro.UI
 {
@@ -20,7 +19,7 @@ namespace FitnessTrainerPro.UI
         {
             try
             {
-                LoadExercises(); // Загружаем все упражнения при старте (фильтры будут пустыми)
+                LoadExercises(); 
             }
             catch (System.Exception ex)
             {
@@ -28,8 +27,7 @@ namespace FitnessTrainerPro.UI
             }
         }
 
-        // ИЗМЕНЕННЫЙ МЕТОД ДЛЯ ЗАГРУЗКИ УПРАЖНЕНИЙ С УЧЕТОМ ФИЛЬТРОВ
-                private void LoadExercises()
+        private void LoadExercises()
         {
             try
             {
@@ -40,15 +38,13 @@ namespace FitnessTrainerPro.UI
                     string filterName = FilterNameTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterName))
                     {
-                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
-                        string lowerFilterName = filterName.ToLower(); // Приводим к нижнему регистру один раз
+                        string lowerFilterName = filterName.ToLower(); 
                         query = query.Where(ex => ex.Name != null && ex.Name.ToLower().Contains(lowerFilterName));
                     }
 
                     string filterMuscleGroup = FilterMuscleGroupTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterMuscleGroup))
                     {
-                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
                         string lowerFilterMuscleGroup = filterMuscleGroup.ToLower();
                         query = query.Where(ex => ex.MuscleGroup != null && ex.MuscleGroup.ToLower().Contains(lowerFilterMuscleGroup));
                     }
@@ -56,7 +52,6 @@ namespace FitnessTrainerPro.UI
                     string filterEquipment = FilterEquipmentTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterEquipment))
                     {
-                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
                         string lowerFilterEquipment = filterEquipment.ToLower();
                         query = query.Where(ex => ex.EquipmentNeeded != null && ex.EquipmentNeeded.ToLower().Contains(lowerFilterEquipment));
                     }
@@ -66,7 +61,6 @@ namespace FitnessTrainerPro.UI
             }
             catch (System.Exception ex)
             {
-                // Выведем и InnerException, если он есть, для лучшей диагностики
                 string errorMessage = $"Ошибка загрузки упражнений: {ex.Message}";
                 if (ex.InnerException != null)
                 {
@@ -76,13 +70,11 @@ namespace FitnessTrainerPro.UI
             }
         }
 
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "ПРИМЕНИТЬ ФИЛЬТР"
         private void ApplyFilterButton_Click(object sender, RoutedEventArgs e)
         {
             LoadExercises(); 
         }
 
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "СБРОСИТЬ ФИЛЬТРЫ"
         private void ClearFilterButton_Click(object sender, RoutedEventArgs e)
         {
             FilterNameTextBox.Text = string.Empty;
@@ -91,7 +83,6 @@ namespace FitnessTrainerPro.UI
             LoadExercises(); 
         }
 
-        // --- Существующие обработчики ---
         private void AddExerciseButton_Click(object sender, RoutedEventArgs e)
         {
             ExerciseWindow exerciseWindow = new ExerciseWindow();
@@ -107,7 +98,7 @@ namespace FitnessTrainerPro.UI
                         dbContext.Exercises.Add(newExercise);
                         dbContext.SaveChanges();
                     }
-                    LoadExercises(); // Важно вызывать LoadExercises, чтобы применились фильтры
+                    LoadExercises();
                 }
                 catch (System.Exception ex)
                 {
@@ -159,7 +150,7 @@ namespace FitnessTrainerPro.UI
                             MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
-                    LoadExercises(); // Важно вызывать LoadExercises
+                    LoadExercises();
                 }
                 catch (DbUpdateException dbEx) 
                 {
@@ -213,7 +204,7 @@ namespace FitnessTrainerPro.UI
                             MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно уже было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
-                    LoadExercises(); // Важно вызывать LoadExercises
+                    LoadExercises();
                 }
                 catch (DbUpdateException dbEx)
                 {
@@ -265,6 +256,14 @@ namespace FitnessTrainerPro.UI
             WorkoutProgramManagementWindow programManagementWindow = new WorkoutProgramManagementWindow();
             programManagementWindow.Owner = this;
             programManagementWindow.ShowDialog();
+        }
+
+        // НОВЫЙ МЕТОД ДЛЯ КНОПКИ "АНАЛИТИКА"
+        private void OpenAnalyticsButton_Click(object sender, RoutedEventArgs e)
+        {
+            AnalyticsWindow analyticsWindow = new AnalyticsWindow();
+            analyticsWindow.Owner = this;
+            analyticsWindow.ShowDialog();
         }
     } 
 }

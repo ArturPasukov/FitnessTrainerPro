@@ -1,7 +1,7 @@
 // src/FitnessTrainerPro.Core/Models/Client.cs
 using System;
 using System.Collections.Generic;
-// using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema; // Для [NotMapped]
 
 namespace FitnessTrainerPro.Core.Models
 {
@@ -16,8 +16,10 @@ namespace FitnessTrainerPro.Core.Models
         public string? Goals { get; set; }
         
         public virtual ICollection<ClientAssignedProgram> AssignedPrograms { get; set; } = new List<ClientAssignedProgram>();
-
-        // НОВОЕ НАВИГАЦИОННОЕ СВОЙСТВО
         public virtual ICollection<ClientMeasurement> Measurements { get; set; } = new List<ClientMeasurement>();
+
+        // НОВОЕ СВОЙСТВО ТОЛЬКО ДЛЯ ЧТЕНИЯ (не сохраняется в БД)
+        [NotMapped] // Атрибут, чтобы EF Core не пытался создать столбец для этого свойства
+        public string FullName => $"{FirstName} {LastName}".Trim();
     }
 }

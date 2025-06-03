@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="Данные замера" Height="650" Width="450" <!-- Увеличена высота -->
+        Title="Данные замера" Height="650" Width="450" 
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Grid Margin="15">
         <Grid.RowDefinitions>
