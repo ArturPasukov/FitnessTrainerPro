@@ -5,14 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="Данные клиента" Height="300" Width="400"
+        Title="Данные клиента" Height="420" Width="400" <!-- Увеличена высота окна -->
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- FirstName -->
             <RowDefinition Height="Auto"/> <!-- LastName -->
             <RowDefinition Height="Auto"/> <!-- DateOfBirth -->
-            <!-- Добавим другие поля позже (Телефон, Email, Цели) -->
+            <RowDefinition Height="Auto"/> <!-- PhoneNumber (НОВОЕ) -->
+            <RowDefinition Height="Auto"/> <!-- Email (НОВОЕ) -->
+            <RowDefinition Height="Auto"/> <!-- Goals (НОВОЕ) -->
             <RowDefinition Height="*"/>    <!-- Пустое пространство -->
             <RowDefinition Height="Auto"/> <!-- Кнопки -->
         </Grid.RowDefinitions>
@@ -30,7 +32,18 @@
         <Label Grid.Row="2" Grid.Column="0" Content="Дата рождения:" VerticalAlignment="Center"/>
         <DatePicker Name="DateOfBirthPicker" Grid.Row="2" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
         
-        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+        <!-- НОВЫЕ ПОЛЯ -->
+        <Label Grid.Row="3" Grid.Column="0" Content="Телефон:" VerticalAlignment="Center"/>
+        <TextBox Name="PhoneNumberTextBox" Grid.Row="3" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+
+        <Label Grid.Row="4" Grid.Column="0" Content="Email:" VerticalAlignment="Center"/>
+        <TextBox Name="EmailTextBox" Grid.Row="4" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+
+        <Label Grid.Row="5" Grid.Column="0" Content="Цели:" VerticalAlignment="Top" Margin="0,5,0,0"/>
+        <TextBox Name="GoalsTextBox" Grid.Row="5" Grid.Column="1" Margin="5" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="60"/>
+        <!-- КОНЕЦ НОВЫХ ПОЛЕЙ -->
+        
+        <StackPanel Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right"> <!-- Grid.Row изменен с 4 на 7 -->
             <Button Name="OkButton" Content="OK" Width="80" Margin="5" IsDefault="True" Click="OkButton_Click"/>
             <Button Name="CancelButton" Content="Отмена" Width="80" Margin="5" IsCancel="True" Click="CancelButton_Click"/>
         </StackPanel>

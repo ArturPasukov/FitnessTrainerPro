@@ -7,6 +7,10 @@ namespace FitnessTrainerPro.Core.Models // Пространство имен п�
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public DateTime? DateOfBirth { get; set; }
+        public string? PhoneNumber { get; set; } // <--- НОВОЕ СВОЙСТВО
+        public string? Email { get; set; }       // <--- НОВОЕ СВОЙСТВО
+        public string? Goals { get; set; }       // <--- НОВОЕ СВОЙСТВО
+        // public string? Notes { get; set; } // Можно добавить и заметки позже
         // Добавим еще поля позже согласно ER-диаграмме
     }
 }

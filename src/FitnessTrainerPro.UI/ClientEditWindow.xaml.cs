@@ -13,7 +13,7 @@ namespace FitnessTrainerPro.UI
         {
             InitializeComponent();
             CurrentClient = new Client();
-            // DateOfBirthPicker.SelectedDate = DateTime.Today; // Можно установить значение по умолчанию
+            // DateOfBirthPicker.SelectedDate = DateTime.Today; 
         }
 
         // Конструктор для редактирования существующего клиента
@@ -25,6 +25,9 @@ namespace FitnessTrainerPro.UI
             FirstNameTextBox.Text = CurrentClient.FirstName;
             LastNameTextBox.Text = CurrentClient.LastName;
             DateOfBirthPicker.SelectedDate = CurrentClient.DateOfBirth;
+            PhoneNumberTextBox.Text = CurrentClient.PhoneNumber; // ДОБАВЛЕНО
+            EmailTextBox.Text = CurrentClient.Email;             // ДОБАВЛЕНО
+            GoalsTextBox.Text = CurrentClient.Goals;             // ДОБАВЛЕНО
         }
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
@@ -32,12 +35,16 @@ namespace FitnessTrainerPro.UI
             CurrentClient.FirstName = FirstNameTextBox.Text;
             CurrentClient.LastName = LastNameTextBox.Text;
             CurrentClient.DateOfBirth = DateOfBirthPicker.SelectedDate;
+            CurrentClient.PhoneNumber = PhoneNumberTextBox.Text; // ДОБАВЛЕНО
+            CurrentClient.Email = EmailTextBox.Text;             // ДОБАВЛЕНО
+            CurrentClient.Goals = GoalsTextBox.Text;             // ДОБАВЛЕНО
             
             if (string.IsNullOrWhiteSpace(CurrentClient.FirstName) || string.IsNullOrWhiteSpace(CurrentClient.LastName))
             {
                 MessageBox.Show("Имя и фамилия клиента не могут быть пустыми.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
+            // Можно добавить валидацию для Email, PhoneNumber и т.д.
 
             this.DialogResult = true;
         }
