@@ -29,7 +29,7 @@ namespace FitnessTrainerPro.UI
         }
 
         // ИЗМЕНЕННЫЙ МЕТОД ДЛЯ ЗАГРУЗКИ УПРАЖНЕНИЙ С УЧЕТОМ ФИЛЬТРОВ
-        private void LoadExercises()
+                private void LoadExercises()
         {
             try
             {
@@ -37,26 +37,28 @@ namespace FitnessTrainerPro.UI
                 {
                     IQueryable<Exercise> query = dbContext.Exercises.AsQueryable();
 
-                    // Применяем фильтр по названию
                     string filterName = FilterNameTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterName))
                     {
-                        // Используем ToLowerInvariant() для сравнения без учета регистра, которое более надежно для некоторых культур, чем ToLower()
-                        query = query.Where(ex => ex.Name != null && ex.Name.ToLowerInvariant().Contains(filterName.ToLowerInvariant()));
+                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
+                        string lowerFilterName = filterName.ToLower(); // Приводим к нижнему регистру один раз
+                        query = query.Where(ex => ex.Name != null && ex.Name.ToLower().Contains(lowerFilterName));
                     }
 
-                    // Применяем фильтр по группе мышц
                     string filterMuscleGroup = FilterMuscleGroupTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterMuscleGroup))
                     {
-                        query = query.Where(ex => ex.MuscleGroup != null && ex.MuscleGroup.ToLowerInvariant().Contains(filterMuscleGroup.ToLowerInvariant()));
+                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
+                        string lowerFilterMuscleGroup = filterMuscleGroup.ToLower();
+                        query = query.Where(ex => ex.MuscleGroup != null && ex.MuscleGroup.ToLower().Contains(lowerFilterMuscleGroup));
                     }
 
-                    // Применяем фильтр по инвентарю
                     string filterEquipment = FilterEquipmentTextBox.Text.Trim();
                     if (!string.IsNullOrWhiteSpace(filterEquipment))
                     {
-                        query = query.Where(ex => ex.EquipmentNeeded != null && ex.EquipmentNeeded.ToLowerInvariant().Contains(filterEquipment.ToLowerInvariant()));
+                        // ИЗМЕНЕНО: ToLowerInvariant() на ToLower()
+                        string lowerFilterEquipment = filterEquipment.ToLower();
+                        query = query.Where(ex => ex.EquipmentNeeded != null && ex.EquipmentNeeded.ToLower().Contains(lowerFilterEquipment));
                     }
 
                     ExercisesListView.ItemsSource = query.OrderBy(ex => ex.Name).ToList();
@@ -64,7 +66,13 @@ namespace FitnessTrainerPro.UI
             }
             catch (System.Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки упражнений: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                // Выведем и InnerException, если он есть, для лучшей диагностики
+                string errorMessage = $"Ошибка загрузки упражнений: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                }
+                MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
