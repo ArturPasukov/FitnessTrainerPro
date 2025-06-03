@@ -1,16 +1,21 @@
-// src/FitnessTrainerPro.Core/Client.cs
-namespace FitnessTrainerPro.Core.Models // Пространство имен по умолчанию для проекта Core
+// src/FitnessTrainerPro.Core/Models/Client.cs
+using System;
+using System.Collections.Generic; // <--- ДОБАВЬ ЭТОТ USING, ЕСЛИ ЕГО НЕТ
+// using System.ComponentModel.DataAnnotations; // Пока не используем здесь, но может понадобиться
+
+namespace FitnessTrainerPro.Core.Models
 {
     public class Client
     {
-        public int ClientID { get; set; } // EF Core по соглашению сделает это первичным ключом (PK)
+        public int ClientID { get; set; } 
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
         public DateTime? DateOfBirth { get; set; }
-        public string? PhoneNumber { get; set; } // <--- НОВОЕ СВОЙСТВО
-        public string? Email { get; set; }       // <--- НОВОЕ СВОЙСТВО
-        public string? Goals { get; set; }       // <--- НОВОЕ СВОЙСТВО
-        // public string? Notes { get; set; } // Можно добавить и заметки позже
-        // Добавим еще поля позже согласно ER-диаграмме
+        public string? PhoneNumber { get; set; } 
+        public string? Email { get; set; }       
+        public string? Goals { get; set; }       
+        
+        // НОВОЕ НАВИГАЦИОННОЕ СВОЙСТВО
+        public virtual ICollection<ClientAssignedProgram> AssignedPrograms { get; set; } = new List<ClientAssignedProgram>();
     }
 }
