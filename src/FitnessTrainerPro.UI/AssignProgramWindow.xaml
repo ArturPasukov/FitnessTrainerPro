@@ -1,0 +1,45 @@
+<Window x:Class="FitnessTrainerPro.UI.AssignProgramWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FitnessTrainerPro.UI"
+        mc:Ignorable="d"
+        Title="Назначение программы клиенту" Height="350" Width="450"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize" Loaded="Window_Loaded">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Клиент (только для информации) -->
+            <RowDefinition Height="Auto"/> <!-- Выбор программы -->
+            <RowDefinition Height="Auto"/> <!-- Дата начала -->
+            <RowDefinition Height="Auto"/> <!-- Дата окончания (опционально) -->
+            <RowDefinition Height="Auto"/> <!-- Заметки тренера -->
+            <RowDefinition Height="*"/>    <!-- Пустое пространство -->
+            <RowDefinition Height="Auto"/> <!-- Кнопки -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Label Grid.Row="0" Grid.Column="0" Content="Клиент:" VerticalAlignment="Center" FontWeight="Bold"/>
+        <TextBlock Name="ClientNameTextBlock" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Center" Text="Имя Фамилия Клиента"/>
+
+        <Label Grid.Row="1" Grid.Column="0" Content="Программа:" VerticalAlignment="Center"/>
+        <ComboBox Name="ProgramsComboBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Center" DisplayMemberPath="Name"/>
+
+        <Label Grid.Row="2" Grid.Column="0" Content="Дата начала:" VerticalAlignment="Center"/>
+        <DatePicker Name="StartDatePicker" Grid.Row="2" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+
+        <Label Grid.Row="3" Grid.Column="0" Content="Дата окончания (опц.):" VerticalAlignment="Center"/>
+        <DatePicker Name="EndDatePicker" Grid.Row="3" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+
+        <Label Grid.Row="4" Grid.Column="0" Content="Заметки тренера:" VerticalAlignment="Top" Margin="0,5,0,0"/>
+        <TextBox Name="TrainerNotesTextBox" Grid.Row="4" Grid.Column="1" Margin="5" Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+        
+        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Name="AssignButton" Content="Назначить" Width="100" Margin="5" IsDefault="True" Click="AssignButton_Click"/>
+            <Button Name="CancelButton" Content="Отмена" Width="100" Margin="5" IsCancel="True" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

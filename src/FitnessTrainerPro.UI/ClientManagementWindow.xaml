@@ -9,9 +9,11 @@
         WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Name="AddClientButton" Content="Добавить клиента" Width="150" Margin="5" Click="AddClientButton_Click"/>
-            <Button Name="EditClientButton" Content="Редактировать" Width="120" Margin="5" Click="EditClientButton_Click"/>
-            <Button Name="DeleteClientButton" Content="Удалить клиента" Width="150" Margin="5" Click="DeleteClientButton_Click"/>
+            <Button Name="AddClientButton" Content="Добавить клиента" Width="140" Margin="5" Click="AddClientButton_Click"/> 
+            <Button Name="EditClientButton" Content="Редактировать" Width="110" Margin="5" Click="EditClientButton_Click"/> 
+            <Button Name="DeleteClientButton" Content="Удалить клиента" Width="130" Margin="5" Click="DeleteClientButton_Click"/> 
+            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/> <!-- Разделитель -->
+            <Button Name="AssignProgramButton" Content="Назначить программу" Width="160" Margin="5" Click="AssignProgramButton_Click"/> <!-- НОВАЯ КНОПКА -->
         </StackPanel>
 
         <ListView Name="ClientsListView" DockPanel.Dock="Top">
