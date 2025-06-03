@@ -102,6 +102,37 @@ namespace FitnessTrainerPro.UI
             MessageBox.Show($"Редактирование упражнения '{selectedProgramExercise.Exercise?.Name}' еще не реализовано.", "В разработке");
         }
 
+        private void AddProgramExerciseButton_Click(object sender, RoutedEventArgs e)
+        {
+            SelectExerciseWindow selectExerciseWindow = new SelectExerciseWindow();
+            selectExerciseWindow.Owner = this;
+
+            if (selectExerciseWindow.ShowDialog() == true && selectExerciseWindow.SelectedExercise != null)
+            {
+                Exercise chosenExercise = selectExerciseWindow.SelectedExercise;
+
+                // TODO: Шаг Б - Открыть окно ProgramExerciseParamsWindow для ввода сетов, репов и т.д.
+                // В это окно нужно будет передать chosenExercise.ExerciseID и chosenExercise.Name (для отображения)
+                // и получить обратно объект ProgramExercise.
+
+                // Пока что создадим ProgramExercise с дефолтными значениями (или запросим их через InputBox - но это плохой UI)
+                // и добавим в список.
+                ProgramExercise newProgramExercise = new ProgramExercise
+                {
+                    ExerciseID = chosenExercise.ExerciseID,
+                    Exercise = chosenExercise, // Для отображения имени в ListView сразу
+                    OrderInProgram = ProgramExercisesList.Count + 1, // Простой способ задать порядок
+                    Sets = 3, // Значения по умолчанию
+                    Reps = "10-12", // Значения по умолчанию
+                    // RestSeconds = 60,
+                    // Notes = "Стандартное выполнение"
+                };
+
+                ProgramExercisesList.Add(newProgramExercise);
+                MessageBox.Show($"Упражнение '{chosenExercise.Name}' добавлено в программу (с параметрами по умолчанию). \nРеализуйте ввод параметров.", "Упражнение добавлено");
+            }
+        }
+
         private void DeleteProgramExerciseButton_Click(object sender, RoutedEventArgs e)
         {
             ProgramExercise? selectedProgramExercise = ProgramExercisesListView.SelectedItem as ProgramExercise;
