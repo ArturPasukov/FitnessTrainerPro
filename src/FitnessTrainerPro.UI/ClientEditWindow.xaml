@@ -5,60 +5,95 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="Данные клиента" Height="600" Width="550" 
+        Title="Данные клиента" Height="650" Width="600" <!-- Увеличена высота и ширина -->
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" 
-        Loaded="Window_Loaded"> <!-- ДОБАВЛЕНО: Loaded="Window_Loaded" -->
-    <Grid Margin="15">
+        Loaded="Window_Loaded"> <!-- Убедись, что Loaded="Window_Loaded" есть или добавлен -->
+    <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- FirstName -->
-            <RowDefinition Height="Auto"/> <!-- LastName -->
-            <RowDefinition Height="Auto"/> <!-- DateOfBirth -->
-            <RowDefinition Height="Auto"/> <!-- PhoneNumber -->
-            <RowDefinition Height="Auto"/> <!-- Email -->
-            <RowDefinition Height="Auto"/> <!-- Goals -->
-            <RowDefinition Height="Auto"/> <!-- Заголовок для назначенных программ (НОВОЕ) -->
-            <RowDefinition Height="*"/>    <!-- ListView для назначенных программ (НОВОЕ) -->
-            <RowDefinition Height="Auto"/> <!-- Кнопки (смещены) -->
+            <RowDefinition Height="*"/>    <!-- TabControl займет основное место -->
+            <RowDefinition Height="Auto"/> <!-- Кнопки OK/Cancel -->
         </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
 
-        <Label Grid.Row="0" Grid.Column="0" Content="Имя:" VerticalAlignment="Center"/>
-        <TextBox Name="FirstNameTextBox" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+        <TabControl Name="MainTabControl" Grid.Row="0" Margin="0,0,0,10">
+            
+            <!-- ВКЛАДКА 1: Основная информация и Назначенные программы -->
+            <TabItem Header="Информация и Программы">
+                <Grid Margin="5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- FirstName -->
+                        <RowDefinition Height="Auto"/> <!-- LastName -->
+                        <RowDefinition Height="Auto"/> <!-- DateOfBirth -->
+                        <RowDefinition Height="Auto"/> <!-- PhoneNumber -->
+                        <RowDefinition Height="Auto"/> <!-- Email -->
+                        <RowDefinition Height="Auto"/> <!-- Goals -->
+                        <RowDefinition Height="Auto"/> <!-- Заголовок для назначенных программ -->
+                        <RowDefinition Height="*"/>    <!-- ListView для назначенных программ -->
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-        <Label Grid.Row="1" Grid.Column="0" Content="Фамилия:" VerticalAlignment="Center"/>
-        <TextBox Name="LastNameTextBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+                    <Label Grid.Row="0" Grid.Column="0" Content="Имя:" VerticalAlignment="Center"/>
+                    <TextBox Name="FirstNameTextBox" Grid.Row="0" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
 
-        <Label Grid.Row="2" Grid.Column="0" Content="Дата рождения:" VerticalAlignment="Center"/>
-        <DatePicker Name="DateOfBirthPicker" Grid.Row="2" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
-        
-        <Label Grid.Row="3" Grid.Column="0" Content="Телефон:" VerticalAlignment="Center"/>
-        <TextBox Name="PhoneNumberTextBox" Grid.Row="3" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+                    <Label Grid.Row="1" Grid.Column="0" Content="Фамилия:" VerticalAlignment="Center"/>
+                    <TextBox Name="LastNameTextBox" Grid.Row="1" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
 
-        <Label Grid.Row="4" Grid.Column="0" Content="Email:" VerticalAlignment="Center"/>
-        <TextBox Name="EmailTextBox" Grid.Row="4" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+                    <Label Grid.Row="2" Grid.Column="0" Content="Дата рождения:" VerticalAlignment="Center"/>
+                    <DatePicker Name="DateOfBirthPicker" Grid.Row="2" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+                    
+                    <Label Grid.Row="3" Grid.Column="0" Content="Телефон:" VerticalAlignment="Center"/>
+                    <TextBox Name="PhoneNumberTextBox" Grid.Row="3" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
 
-        <Label Grid.Row="5" Grid.Column="0" Content="Цели:" VerticalAlignment="Top" Margin="0,5,0,0"/>
-        <TextBox Name="GoalsTextBox" Grid.Row="5" Grid.Column="1" Margin="5" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="60"/>
-        
-        <!-- НОВАЯ СЕКЦИЯ ДЛЯ ОТОБРАЖЕНИЯ НАЗНАЧЕННЫХ ПРОГРАММ -->
-        <Label Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Content="Назначенные программы тренировок:" FontWeight="Bold" Margin="0,10,0,5"/>
-        <ListView Name="AssignedProgramsListView" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,10" MaxHeight="150" ScrollViewer.VerticalScrollBarVisibility="Auto">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="Программа" DisplayMemberBinding="{Binding WorkoutProgram.Name}" Width="150"/>
-                    <GridViewColumn Header="Дата начала" DisplayMemberBinding="{Binding StartDate, StringFormat='dd.MM.yyyy'}" Width="100"/>
-                    <GridViewColumn Header="Дата окончания" DisplayMemberBinding="{Binding EndDate, StringFormat='dd.MM.yyyy'}" Width="100"/>
-                    <GridViewColumn Header="Активна" DisplayMemberBinding="{Binding IsActive}" Width="70"/>
-                    <GridViewColumn Header="Заметки тренера" DisplayMemberBinding="{Binding TrainerNotesForClient}" Width="Auto"/>
-                </GridView>
-            </ListView.View>
-        </ListView>
-        <!-- КОНЕЦ НОВОЙ СЕКЦИИ -->
-        
-        <StackPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right"> <!-- Grid.Row изменен на 8 -->
+                    <Label Grid.Row="4" Grid.Column="0" Content="Email:" VerticalAlignment="Center"/>
+                    <TextBox Name="EmailTextBox" Grid.Row="4" Grid.Column="1" Margin="5" VerticalAlignment="Center"/>
+
+                    <Label Grid.Row="5" Grid.Column="0" Content="Цели:" VerticalAlignment="Top" Margin="0,5,0,0"/>
+                    <TextBox Name="GoalsTextBox" Grid.Row="5" Grid.Column="1" Margin="5" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" Height="60"/>
+                    
+                    <Label Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="2" Content="Назначенные программы тренировок:" FontWeight="Bold" Margin="0,10,0,5"/>
+                    <ListView Name="AssignedProgramsListView" Grid.Row="7" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,0" MaxHeight="150" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Программа" DisplayMemberBinding="{Binding WorkoutProgram.Name}" Width="140"/>
+                                <GridViewColumn Header="Дата начала" DisplayMemberBinding="{Binding StartDate, StringFormat='dd.MM.yyyy'}" Width="90"/>
+                                <GridViewColumn Header="Дата окончания" DisplayMemberBinding="{Binding EndDate, StringFormat='dd.MM.yyyy'}" Width="90"/>
+                                <GridViewColumn Header="Активна" DisplayMemberBinding="{Binding IsActive}" Width="60"/>
+                                <GridViewColumn Header="Заметки тренера" DisplayMemberBinding="{Binding TrainerNotesForClient}" Width="Auto"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </TabItem>
+
+            <!-- ВКЛАДКА 2: Замеры клиента (НОВАЯ) -->
+            <TabItem Header="Замеры">
+                <DockPanel Margin="5">
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <Button Name="AddMeasurementButton" Content="Добавить замер" Width="130" Margin="5" Click="AddMeasurementButton_Click"/>
+                        <Button Name="EditMeasurementButton" Content="Редактировать" Width="120" Margin="5" Click="EditMeasurementButton_Click"/>
+                        <Button Name="DeleteMeasurementButton" Content="Удалить замер" Width="120" Margin="5" Click="DeleteMeasurementButton_Click"/>
+                    </StackPanel>
+
+                    <ListView Name="MeasurementsListView" DockPanel.Dock="Top">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Дата замера" DisplayMemberBinding="{Binding MeasurementDate, StringFormat='dd.MM.yyyy'}" Width="100"/>
+                                <GridViewColumn Header="Вес (кг)" DisplayMemberBinding="{Binding WeightKg}" Width="70"/>
+                                <GridViewColumn Header="Грудь (см)" DisplayMemberBinding="{Binding ChestCm}" Width="80"/>
+                                <GridViewColumn Header="Талия (см)" DisplayMemberBinding="{Binding WaistCm}" Width="80"/>
+                                <GridViewColumn Header="Бедра (см)" DisplayMemberBinding="{Binding HipsCm}" Width="80"/>
+                                <GridViewColumn Header="Заметки" DisplayMemberBinding="{Binding Notes}" Width="Auto"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </DockPanel>
+            </TabItem>
+            
+        </TabControl>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0"> 
             <Button Name="OkButton" Content="OK" Width="80" Margin="5" IsDefault="True" Click="OkButton_Click"/>
             <Button Name="CancelButton" Content="Отмена" Width="80" Margin="5" IsCancel="True" Click="CancelButton_Click"/>
         </StackPanel>

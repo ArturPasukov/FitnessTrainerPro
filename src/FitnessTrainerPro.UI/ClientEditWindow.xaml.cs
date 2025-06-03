@@ -1,35 +1,38 @@
 using System;
-using System.Collections.Generic; // Для List<T>
+using System.Collections.Generic; // Для List
+using System.Collections.ObjectModel; // Для ObservableCollection
 using System.Linq;
 using System.Windows;
 using FitnessTrainerPro.Core.Models;
 using FitnessTrainerPro.Data;
-using Microsoft.EntityFrameworkCore; // Для .Include()
+using Microsoft.EntityFrameworkCore;
 
 namespace FitnessTrainerPro.UI
 {
     public partial class ClientEditWindow : Window
     {
         public Client CurrentClient { get; private set; }
-        // Используем List<T>, так как пока не планируем динамическое добавление/удаление программ из этого списка.
-        // Если бы планировали, лучше был бы ObservableCollection<ClientAssignedProgram>.
-        public List<ClientAssignedProgram> AssignedProgramsList { get; set; }
+        
+        // Список для назначенных программ
+        public ObservableCollection<ClientAssignedProgram> AssignedProgramsList { get; set; }
 
-        // Конструктор для нового клиента
+        // НОВЫЙ СПИСОК для замеров клиента
+        public ObservableCollection<ClientMeasurement> MeasurementsList { get; set; }
+
+        // Конструктор для НОВОГО клиента
         public ClientEditWindow()
         {
             InitializeComponent();
             CurrentClient = new Client();
-            AssignedProgramsList = new List<ClientAssignedProgram>(); // Инициализируем пустой список
-            // Привязка к ListView будет сделана в XAML через ItemsSource="{Binding AssignedProgramsList}"
-            // или мы можем установить ее здесь, если DataContext установлен на это окно.
-            // Проще всего будет установить DataContext = this; в конструкторе и использовать Binding в XAML.
-            // Но для ListView, который мы добавили вручную, можно и напрямую:
-            AssignedProgramsListView.ItemsSource = AssignedProgramsList; 
-            // DateOfBirthPicker.SelectedDate = DateTime.Today; 
+            
+            AssignedProgramsList = new ObservableCollection<ClientAssignedProgram>();
+            AssignedProgramsListView.ItemsSource = AssignedProgramsList; // Привязка для вкладки "Информация и Программы"
+
+            MeasurementsList = new ObservableCollection<ClientMeasurement>(); // Инициализируем список замеров
+            MeasurementsListView.ItemsSource = MeasurementsList;       // Привязка для вкладки "Замеры"
         }
 
-        // Конструктор для редактирования существующего клиента
+        // Конструктор для РЕДАКТИРОВАНИЯ клиента
         public ClientEditWindow(Client clientToEdit)
         {
             InitializeComponent();
@@ -43,20 +46,22 @@ namespace FitnessTrainerPro.UI
             EmailTextBox.Text = CurrentClient.Email;            
             GoalsTextBox.Text = CurrentClient.Goals;   
 
-            // Инициализируем список для назначенных программ
-            AssignedProgramsList = new List<ClientAssignedProgram>(); 
-            AssignedProgramsListView.ItemsSource = AssignedProgramsList; // Привязываем к ListView
-            // Загрузка самих программ произойдет в Window_Loaded
+            // Инициализируем списки для вкладок
+            AssignedProgramsList = new ObservableCollection<ClientAssignedProgram>(); 
+            AssignedProgramsListView.ItemsSource = AssignedProgramsList;
+            
+            MeasurementsList = new ObservableCollection<ClientMeasurement>(); 
+            MeasurementsListView.ItemsSource = MeasurementsList;
+            // Загрузка данных для списков произойдет в Window_Loaded
         }
 
-        // Обработчик события Loaded для окна, который мы добавили в XAML
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Загружаем назначенные программы только если это редактирование существующего клиента
-            // и у него есть ClientID (т.е. он уже сохранен в базе)
-            if (CurrentClient != null && CurrentClient.ClientID > 0)
+            // Загружаем связанные данные только если это редактирование существующего клиента
+            if (CurrentClient != null && CurrentClient.ClientID > 0) 
             {
                 LoadAssignedProgramsForClient();
+                LoadMeasurementsForClient(); // НОВЫЙ ВЫЗОВ
             }
         }
 
@@ -66,25 +71,17 @@ namespace FitnessTrainerPro.UI
             {
                 using (var dbContext = new FitnessDbContext())
                 {
-                    // Загружаем назначенные программы для текущего клиента,
-                    // включая связанную информацию о самой программе тренировок (WorkoutProgram)
-                    // чтобы отобразить ее имя в ListView.
                     var assignments = dbContext.ClientAssignedPrograms
-                                          .Include(cap => cap.WorkoutProgram) // ВАЖНО: Загружаем связанную WorkoutProgram
+                                          .Include(cap => cap.WorkoutProgram)
                                           .Where(cap => cap.ClientID == CurrentClient.ClientID)
-                                          .OrderByDescending(cap => cap.StartDate) // Сначала более новые назначения
+                                          .OrderByDescending(cap => cap.StartDate)
                                           .ToList();
                     
-                    // Обновляем список в UI
-                    AssignedProgramsList.Clear(); // Очищаем, если там что-то было (хотя при первой загрузке он пуст)
+                    AssignedProgramsList.Clear(); 
                     foreach (var assignment in assignments)
                     {
                         AssignedProgramsList.Add(assignment);
                     }
-                    // Если бы AssignedProgramsList был ObservableCollection, ListView обновился бы сам.
-                    // Для List<T> нужно "передернуть" ItemsSource, чтобы ListView обновился.
-                    AssignedProgramsListView.ItemsSource = null; // Сначала сбрасываем
-                    AssignedProgramsListView.ItemsSource = AssignedProgramsList; // Затем присваиваем обновленный список
                 }
             }
             catch (Exception ex)
@@ -93,9 +90,33 @@ namespace FitnessTrainerPro.UI
             }
         }
 
+        // НОВЫЙ МЕТОД для загрузки замеров
+        private void LoadMeasurementsForClient()
+        {
+            try
+            {
+                using (var dbContext = new FitnessDbContext())
+                {
+                    var measurements = dbContext.ClientMeasurements
+                                           .Where(m => m.ClientID == CurrentClient.ClientID)
+                                           .OrderByDescending(m => m.MeasurementDate) 
+                                           .ToList();
+                    
+                    MeasurementsList.Clear();
+                    foreach (var measurement in measurements)
+                    {
+                        MeasurementsList.Add(measurement);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки замеров клиента: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
-            // Сохраняем основные данные клиента
             CurrentClient.FirstName = FirstNameTextBox.Text;
             CurrentClient.LastName = LastNameTextBox.Text;
             CurrentClient.DateOfBirth = DateOfBirthPicker.SelectedDate;
@@ -108,18 +129,145 @@ namespace FitnessTrainerPro.UI
                 MessageBox.Show("Имя и фамилия клиента не могут быть пустыми.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            // Валидацию для Email, PhoneNumber можно добавить здесь
-
-            // Список AssignedPrograms мы здесь не изменяем, он только для отображения.
-            // Управление назначениями (добавление/удаление) происходит в другом месте (ClientManagementWindow -> AssignProgramWindow).
-            // Если бы мы хотели редактировать детали назначения прямо здесь, потребовалась бы другая логика.
-
             this.DialogResult = true;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = false;
+        }
+
+        // --- НОВЫЕ ОБРАБОТЧИКИ ДЛЯ КНОПОК УПРАВЛЕНИЯ ЗАМЕРАМИ ---
+        private void AddMeasurementButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (CurrentClient == null || CurrentClient.ClientID == 0)
+            {
+                // Это может произойти, если пытаемся добавить замер для еще не сохраненного нового клиента
+                MessageBox.Show("Сначала сохраните нового клиента, прежде чем добавлять замеры.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Warning);
+                // Можно переключить фокус на первую вкладку, если есть TabControl
+                // MainTabControl.SelectedIndex = 0; 
+                return;
+            }
+
+            MeasurementEditWindow measurementWindow = new MeasurementEditWindow(CurrentClient.ClientID);
+            measurementWindow.Owner = this;
+
+            if (measurementWindow.ShowDialog() == true)
+            {
+                ClientMeasurement newMeasurement = measurementWindow.CurrentMeasurement;
+                try
+                {
+                    using (var dbContext = new FitnessDbContext())
+                    {
+                        dbContext.ClientMeasurements.Add(newMeasurement);
+                        dbContext.SaveChanges();
+                    }
+                    LoadMeasurementsForClient(); // Обновляем список замеров в UI
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    string errorMessage = $"Ошибка добавления замера (БД): {dbEx.Message}";
+                    if (dbEx.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    string errorMessage = $"Общая ошибка добавления замера: {ex.Message}";
+                    if (ex.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void EditMeasurementButton_Click(object sender, RoutedEventArgs e)
+        {
+            ClientMeasurement? selectedMeasurement = MeasurementsListView.SelectedItem as ClientMeasurement;
+            if (selectedMeasurement == null)
+            {
+                MessageBox.Show("Пожалуйста, выберите замер для редактирования.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            MeasurementEditWindow measurementWindow = new MeasurementEditWindow(selectedMeasurement);
+            measurementWindow.Owner = this;
+
+            if (measurementWindow.ShowDialog() == true)
+            {
+                try
+                {
+                    using (var dbContext = new FitnessDbContext())
+                    {
+                        var measurementInDb = dbContext.ClientMeasurements.Find(selectedMeasurement.MeasurementID);
+                        if (measurementInDb != null)
+                        {
+                            measurementInDb.MeasurementDate = measurementWindow.CurrentMeasurement.MeasurementDate;
+                            measurementInDb.WeightKg = measurementWindow.CurrentMeasurement.WeightKg;
+                            measurementInDb.ChestCm = measurementWindow.CurrentMeasurement.ChestCm;
+                            measurementInDb.WaistCm = measurementWindow.CurrentMeasurement.WaistCm;
+                            measurementInDb.HipsCm = measurementWindow.CurrentMeasurement.HipsCm;
+                            measurementInDb.Notes = measurementWindow.CurrentMeasurement.Notes;
+                            
+                            dbContext.SaveChanges();
+                        }
+                    }
+                    LoadMeasurementsForClient(); 
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    string errorMessage = $"Ошибка редактирования замера (БД): {dbEx.Message}";
+                    if (dbEx.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    string errorMessage = $"Общая ошибка редактирования замера: {ex.Message}";
+                    if (ex.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void DeleteMeasurementButton_Click(object sender, RoutedEventArgs e)
+        {
+            ClientMeasurement? selectedMeasurement = MeasurementsListView.SelectedItem as ClientMeasurement;
+            if (selectedMeasurement == null)
+            {
+                MessageBox.Show("Пожалуйста, выберите замер для удаления.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            MessageBoxResult result = MessageBox.Show($"Удалить замер от {selectedMeasurement.MeasurementDate:dd.MM.yyyy}?",
+                                                     "Подтверждение удаления",
+                                                     MessageBoxButton.YesNo,
+                                                     MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    using (var dbContext = new FitnessDbContext())
+                    {
+                        var measurementToDelete = dbContext.ClientMeasurements.Find(selectedMeasurement.MeasurementID);
+                        if (measurementToDelete != null)
+                        {
+                            dbContext.ClientMeasurements.Remove(measurementToDelete);
+                            dbContext.SaveChanges();
+                        }
+                    }
+                    LoadMeasurementsForClient(); 
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    string errorMessage = $"Ошибка удаления замера (БД): {dbEx.Message}";
+                    if (dbEx.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка БД: {dbEx.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка удаления", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                catch (Exception ex)
+                {
+                    string errorMessage = $"Общая ошибка удаления замера: {ex.Message}";
+                    if (ex.InnerException != null) errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+                    MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
     }
 }
