@@ -1,10 +1,11 @@
 ﻿using System.Windows;
 using FitnessTrainerPro.Data;
-using Microsoft.EntityFrameworkCore; // Важно для DbUpdateException
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using FitnessTrainerPro.Core.Models;
-using System.Diagnostics; 
-using System.Windows.Navigation; 
+using System.Diagnostics;
+using System.Windows.Navigation;
+// using System.Windows.Controls; // Может понадобиться, если будешь использовать TextChanged для авто-фильтрации
 
 namespace FitnessTrainerPro.UI
 {
@@ -19,23 +20,70 @@ namespace FitnessTrainerPro.UI
         {
             try
             {
-                LoadExercises();
+                LoadExercises(); // Загружаем все упражнения при старте (фильтры будут пустыми)
             }
             catch (System.Exception ex)
             {
-                // Оставим ToString() здесь, т.к. это загрузка, и детальная ошибка может быть полезна
                 MessageBox.Show($"Произошла ошибка при первоначальной загрузке данных: {ex.ToString()}", "Критическая ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        // ИЗМЕНЕННЫЙ МЕТОД ДЛЯ ЗАГРУЗКИ УПРАЖНЕНИЙ С УЧЕТОМ ФИЛЬТРОВ
         private void LoadExercises()
         {
-            using (var dbContext = new FitnessDbContext())
+            try
             {
-                ExercisesListView.ItemsSource = dbContext.Exercises.ToList();
+                using (var dbContext = new FitnessDbContext())
+                {
+                    IQueryable<Exercise> query = dbContext.Exercises.AsQueryable();
+
+                    // Применяем фильтр по названию
+                    string filterName = FilterNameTextBox.Text.Trim();
+                    if (!string.IsNullOrWhiteSpace(filterName))
+                    {
+                        // Используем ToLowerInvariant() для сравнения без учета регистра, которое более надежно для некоторых культур, чем ToLower()
+                        query = query.Where(ex => ex.Name != null && ex.Name.ToLowerInvariant().Contains(filterName.ToLowerInvariant()));
+                    }
+
+                    // Применяем фильтр по группе мышц
+                    string filterMuscleGroup = FilterMuscleGroupTextBox.Text.Trim();
+                    if (!string.IsNullOrWhiteSpace(filterMuscleGroup))
+                    {
+                        query = query.Where(ex => ex.MuscleGroup != null && ex.MuscleGroup.ToLowerInvariant().Contains(filterMuscleGroup.ToLowerInvariant()));
+                    }
+
+                    // Применяем фильтр по инвентарю
+                    string filterEquipment = FilterEquipmentTextBox.Text.Trim();
+                    if (!string.IsNullOrWhiteSpace(filterEquipment))
+                    {
+                        query = query.Where(ex => ex.EquipmentNeeded != null && ex.EquipmentNeeded.ToLowerInvariant().Contains(filterEquipment.ToLowerInvariant()));
+                    }
+
+                    ExercisesListView.ItemsSource = query.OrderBy(ex => ex.Name).ToList();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Ошибка загрузки упражнений: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "ПРИМЕНИТЬ ФИЛЬТР"
+        private void ApplyFilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadExercises(); 
+        }
+
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "СБРОСИТЬ ФИЛЬТРЫ"
+        private void ClearFilterButton_Click(object sender, RoutedEventArgs e)
+        {
+            FilterNameTextBox.Text = string.Empty;
+            FilterMuscleGroupTextBox.Text = string.Empty;
+            FilterEquipmentTextBox.Text = string.Empty;
+            LoadExercises(); 
+        }
+
+        // --- Существующие обработчики ---
         private void AddExerciseButton_Click(object sender, RoutedEventArgs e)
         {
             ExerciseWindow exerciseWindow = new ExerciseWindow();
@@ -44,14 +92,14 @@ namespace FitnessTrainerPro.UI
             if (exerciseWindow.ShowDialog() == true)
             {
                 Exercise newExercise = exerciseWindow.CurrentExercise;
-                try // Добавляем try-catch для операции добавления
+                try 
                 {
                     using (var dbContext = new FitnessDbContext())
                     {
                         dbContext.Exercises.Add(newExercise);
                         dbContext.SaveChanges();
                     }
-                    LoadExercises();
+                    LoadExercises(); // Важно вызывать LoadExercises, чтобы применились фильтры
                 }
                 catch (System.Exception ex)
                 {
@@ -83,7 +131,6 @@ namespace FitnessTrainerPro.UI
 
             if (exerciseWindow.ShowDialog() == true)
             {
-                // ДОБАВЛЕН БЛОК TRY-CATCH
                 try
                 {
                     using (var dbContext = new FitnessDbContext())
@@ -104,9 +151,9 @@ namespace FitnessTrainerPro.UI
                             MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
-                    LoadExercises(); 
+                    LoadExercises(); // Важно вызывать LoadExercises
                 }
-                catch (DbUpdateException dbEx) // Ловим специфичные ошибки обновления БД
+                catch (DbUpdateException dbEx) 
                 {
                     string errorMessage = $"Ошибка обновления упражнения в базе данных: {dbEx.Message}";
                     if (dbEx.InnerException != null)
@@ -115,7 +162,7 @@ namespace FitnessTrainerPro.UI
                     }
                     MessageBox.Show(errorMessage, "Ошибка сохранения", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
-                catch (System.Exception ex) // Ловим все остальные ошибки
+                catch (System.Exception ex) 
                 {
                     string errorMessage = $"Общая ошибка при редактировании упражнения: {ex.Message}";
                     if (ex.InnerException != null)
@@ -143,7 +190,7 @@ namespace FitnessTrainerPro.UI
 
             if (result == MessageBoxResult.Yes)
             {
-                try // Добавляем try-catch для операции удаления
+                try 
                 {
                     using (var dbContext = new FitnessDbContext())
                     {
@@ -158,7 +205,7 @@ namespace FitnessTrainerPro.UI
                             MessageBox.Show("Выбранное упражнение не найдено в базе данных. Возможно, оно уже было удалено.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
-                    LoadExercises();
+                    LoadExercises(); // Важно вызывать LoadExercises
                 }
                 catch (DbUpdateException dbEx)
                 {
