@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         xmlns:converters="clr-namespace:FitnessTrainerPro.UI.Converters"
         mc:Ignorable="d"
-        Title="Фитнес-трекер для тренера" Height="450" Width="800" Loaded="Window_Loaded">
+        Title="Фитнес-трекер для тренера" Height="450" Width="1000" Loaded="Window_Loaded"> <!-- Увеличил ширину окна -->
 
     <Window.Resources>
         <converters:IsNullOrEmptyStringConverter x:Key="IsNullOrEmptyStringConverter"/>
@@ -16,17 +16,19 @@
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
             <!-- Кнопки для упражнений -->
-            <Button Name="AddExerciseButton" Content="Добавить упр." Width="120" Margin="5" Click="AddExerciseButton_Click"/>
-            <Button Name="EditExerciseButton" Content="Редакт. упр." Width="120" Margin="5" Click="EditExerciseButton_Click"/>
-            <Button Name="DeleteExerciseButton" Content="Удалить упр." Width="120" Margin="5" Click="DeleteExerciseButton_Click"/>
-            <!-- Разделитель или просто отступ -->
-            <Separator Width="20" Visibility="Hidden"/> 
-            <!-- НОВАЯ КНОПКА ДЛЯ КЛИЕНТОВ -->
-            <Button Name="ManageClientsButton" Content="Управление клиентами" Width="180" Margin="5" Click="ManageClientsButton_Click"/>
+            <Button Name="AddExerciseButton" Content="Добавить упр." Width="110" Margin="5" Click="AddExerciseButton_Click"/>
+            <Button Name="EditExerciseButton" Content="Редакт. упр." Width="110" Margin="5" Click="EditExerciseButton_Click"/>
+            <Button Name="DeleteExerciseButton" Content="Удалить упр." Width="110" Margin="5" Click="DeleteExerciseButton_Click"/>
+            
+            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/> 
+            
+            <Button Name="ManageClientsButton" Content="Управление клиентами" Width="160" Margin="5" Click="ManageClientsButton_Click"/>
+            
+            <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/>
+            <Button Name="ManageProgramsButton" Content="Программы тренировок" Width="170" Margin="5" Click="ManageProgramsButton_Click"/>
         </StackPanel>
 
         <ListView Name="ExercisesListView" DockPanel.Dock="Top">
-            <!-- ... остальная часть ListView для упражнений без изменений ... -->
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="40"/>

@@ -138,6 +138,8 @@ namespace FitnessTrainerPro.UI
             e.Handled = true; // Помечаем, что мы обработали событие навигации
         }
         
+
+        
     private void ManageClientsButton_Click(object sender, RoutedEventArgs e)
         {
             ClientManagementWindow clientManagementWindow = new ClientManagementWindow();
@@ -145,5 +147,12 @@ namespace FitnessTrainerPro.UI
             // clientManagementWindow.Show(); // Открывает немодально
             clientManagementWindow.ShowDialog(); // Открывает модально, блокируя главное окно
         }
-    }
-}
+        
+    private void ManageProgramsButton_Click(object sender, RoutedEventArgs e)
+        {
+            WorkoutProgramManagementWindow programManagementWindow = new WorkoutProgramManagementWindow();
+            programManagementWindow.Owner = this;
+            programManagementWindow.ShowDialog();
+        }
+    } // Конец класса MainWindow
+} // Конец namespace
