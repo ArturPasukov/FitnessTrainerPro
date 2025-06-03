@@ -6,10 +6,9 @@ namespace FitnessTrainerPro.Core.Models
 {
     public class ProgramExercise
     {
-        [Key] // <--- ДОБАВЬ ЭТОТ АТРИБУТ
+        [Key]
         public int ProgramExerciseID { get; set; }
 
-        // ... остальные свойства ...
         [Required]
         public int ProgramID { get; set; }
         [Required]
@@ -33,9 +32,9 @@ namespace FitnessTrainerPro.Core.Models
         public int OrderInProgram { get; set; } 
 
         [ForeignKey("ProgramID")]
-        public virtual WorkoutProgram WorkoutProgram { get; set; } = null!;
+        public virtual WorkoutProgram? WorkoutProgram { get; set; } // <--- ДОБАВЛЕН '?'
 
         [ForeignKey("ExerciseID")]
-        public virtual Exercise Exercise { get; set; } = null!;
+        public virtual Exercise? Exercise { get; set; }             // <--- ДОБАВЛЕН '?'
     }
 }
