@@ -404,3 +404,15 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
+# SQLite database files in the Database folder
+/Database/*.db
+/Database/*.db-shm
+/Database/*.db-wal
+
+# If you might have .db files elsewhere that also need ignoring (not in bin/obj)
+# you could add a more general rule, but be careful not to ignore wanted files.
+# For example, to ignore all .db files:
+# *.db
+# *.db-shm
+# *.db-wal
