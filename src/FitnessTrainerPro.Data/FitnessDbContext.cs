@@ -11,11 +11,13 @@ namespace FitnessTrainerPro.Data
         // Существующие DbSet'ы
         public DbSet<Client> Clients { get; set; }
         public DbSet<Exercise> Exercises { get; set; }
-
-        // НОВЫЕ DbSet'ы (уже должны быть)
         public DbSet<WorkoutProgram> WorkoutPrograms { get; set; }
         public DbSet<ProgramExercise> ProgramExercises { get; set; }
         public DbSet<ClientAssignedProgram> ClientAssignedPrograms { get; set; }
+
+        // НОВЫЙ DbSet для замеров
+        public DbSet<ClientMeasurement> ClientMeasurements { get; set; }
+
 
         public FitnessDbContext() { }
 
@@ -53,10 +55,10 @@ namespace FitnessTrainerPro.Data
                 .WithMany() 
                 .HasForeignKey(pe => pe.ExerciseID);
 
-            // Связь Client <-> ClientAssignedProgram (ИЗМЕНЕНО ЗДЕСЬ)
+            // Связь Client <-> ClientAssignedProgram 
             modelBuilder.Entity<ClientAssignedProgram>()
                 .HasOne(cap => cap.Client)
-                .WithMany(c => c.AssignedPrograms) // <--- ИЗМЕНЕНО: УКАЗЫВАЕМ НА КОЛЛЕКЦИЮ В Client
+                .WithMany(c => c.AssignedPrograms) 
                 .HasForeignKey(cap => cap.ClientID);
             
             // Связь WorkoutProgram <-> ClientAssignedProgram 
@@ -64,6 +66,12 @@ namespace FitnessTrainerPro.Data
                 .HasOne(cap => cap.WorkoutProgram)
                 .WithMany(wp => wp.ClientAssignments) 
                 .HasForeignKey(cap => cap.ProgramID);
+
+            // НОВАЯ КОНФИГУРАЦИЯ СВЯЗИ Client <-> ClientMeasurement
+            modelBuilder.Entity<ClientMeasurement>()
+                .HasOne(cm => cm.Client) // У ClientMeasurement есть свойство Client
+                .WithMany(c => c.Measurements) // У Client есть коллекция Measurements
+                .HasForeignKey(cm => cm.ClientID); // Внешний ключ в ClientMeasurement
         }
     }
 }
