@@ -27,10 +27,17 @@ namespace FitnessTrainerPro.Core.Models
 
         [Range(0, 300, ErrorMessage = "Объем бедер должен быть положительным числом")]
         public double? HipsCm { get; set; } // Обхват бедер в см
-
-        // Позже можно добавить: BodyFatPercentage (double?), PhotoPath (string?)
+        
         [StringLength(500)]
         public string? Notes { get; set; } // Дополнительные заметки
+
+        // НОВЫЕ СВОЙСТВА ДЛЯ ПУТЕЙ К ФОТОГРАФИЯМ
+        [StringLength(260)] // Стандартная максимальная длина пути в Windows, можно увеличить при необходимости
+        public string? PhotoBeforePath { get; set; }
+
+        [StringLength(260)]
+        public string? PhotoAfterPath { get; set; }
+        // КОНЕЦ НОВЫХ СВОЙСТВ
 
         // Навигационное свойство
         [ForeignKey("ClientID")]

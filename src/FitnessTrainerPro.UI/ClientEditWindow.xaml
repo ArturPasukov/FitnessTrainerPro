@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         mc:Ignorable="d"
-        Title="Данные клиента" Height="650" Width="600" <!-- Увеличена высота и ширина -->
+        Title="Данные клиента" Height="650" Width="600" 
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" 
         Loaded="Window_Loaded"> <!-- Убедись, что Loaded="Window_Loaded" есть или добавлен -->
     <Grid Margin="10">

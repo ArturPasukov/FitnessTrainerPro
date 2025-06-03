@@ -1,13 +1,17 @@
 using System;
-using System.Globalization; // Для CultureInfo при парсинге double
+using System.Globalization;
 using System.Windows;
 using FitnessTrainerPro.Core.Models;
+using Microsoft.Win32; // Для OpenFileDialog
+using System.IO;        // Для Path, File, Directory
+using System.Windows.Media.Imaging; // Для BitmapImage
 
 namespace FitnessTrainerPro.UI
 {
     public partial class MeasurementEditWindow : Window
     {
         public ClientMeasurement CurrentMeasurement { get; private set; }
+        private string _appPhotosFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ClientPhotos");
 
         // Конструктор для нового замера
         public MeasurementEditWindow(int clientId)
@@ -16,9 +20,10 @@ namespace FitnessTrainerPro.UI
             CurrentMeasurement = new ClientMeasurement
             {
                 ClientID = clientId,
-                MeasurementDate = DateTime.Today // Значение по умолчанию
+                MeasurementDate = DateTime.Today
             };
             MeasurementDatePicker.SelectedDate = CurrentMeasurement.MeasurementDate;
+            EnsurePhotosFolderExists();
         }
 
         // Конструктор для редактирования существующего замера
@@ -26,6 +31,7 @@ namespace FitnessTrainerPro.UI
         {
             InitializeComponent();
             CurrentMeasurement = measurementToEdit;
+            EnsurePhotosFolderExists();
 
             MeasurementDatePicker.SelectedDate = CurrentMeasurement.MeasurementDate;
             WeightTextBox.Text = CurrentMeasurement.WeightKg?.ToString(CultureInfo.InvariantCulture);
@@ -33,7 +39,119 @@ namespace FitnessTrainerPro.UI
             WaistTextBox.Text = CurrentMeasurement.WaistCm?.ToString(CultureInfo.InvariantCulture);
             HipsTextBox.Text = CurrentMeasurement.HipsCm?.ToString(CultureInfo.InvariantCulture);
             NotesTextBox.Text = CurrentMeasurement.Notes;
+
+            // Загрузка и отображение существующих фото
+            LoadAndDisplayPhoto(CurrentMeasurement.PhotoBeforePath, PhotoBeforePreviewImage, PhotoBeforePathTextBlock);
+            LoadAndDisplayPhoto(CurrentMeasurement.PhotoAfterPath, PhotoAfterPreviewImage, PhotoAfterPathTextBlock);
         }
+
+        private void EnsurePhotosFolderExists()
+        {
+            if (!Directory.Exists(_appPhotosFolder))
+            {
+                Directory.CreateDirectory(_appPhotosFolder);
+            }
+            // Можно также создавать подпапки для каждого клиента, например:
+            // string clientSpecificFolder = Path.Combine(_appPhotosFolder, $"Client_{CurrentMeasurement.ClientID}");
+            // if (!Directory.Exists(clientSpecificFolder))
+            // {
+            //     Directory.CreateDirectory(clientSpecificFolder);
+            // }
+            // И сохранять фото туда. Пока для простоты используем общую папку.
+        }
+
+        private void BrowsePhotoBeforeButton_Click(object sender, RoutedEventArgs e)
+        {
+            string? newPhotoPath = SelectAndCopyPhoto(CurrentMeasurement.ClientID, "before");
+            if (newPhotoPath != null)
+            {
+                CurrentMeasurement.PhotoBeforePath = newPhotoPath; // Сохраняем относительный путь
+                LoadAndDisplayPhoto(CurrentMeasurement.PhotoBeforePath, PhotoBeforePreviewImage, PhotoBeforePathTextBlock);
+            }
+        }
+
+        private void BrowsePhotoAfterButton_Click(object sender, RoutedEventArgs e)
+        {
+            string? newPhotoPath = SelectAndCopyPhoto(CurrentMeasurement.ClientID, "after");
+            if (newPhotoPath != null)
+            {
+                CurrentMeasurement.PhotoAfterPath = newPhotoPath; // Сохраняем относительный путь
+                LoadAndDisplayPhoto(CurrentMeasurement.PhotoAfterPath, PhotoAfterPreviewImage, PhotoAfterPathTextBlock);
+            }
+        }
+
+        private string? SelectAndCopyPhoto(int clientId, string type) // type = "before" or "after"
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = $"Выберите фото '{type.ToUpper()}'",
+                Filter = "Файлы изображений (*.jpg;*.jpeg;*.png;*.gif;*.bmp)|*.jpg;*.jpeg;*.png;*.gif;*.bmp"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                try
+                {
+                    string sourceFilePath = openFileDialog.FileName;
+                    // Генерируем уникальное имя файла, чтобы избежать конфликтов
+                    // и включаем ID клиента и тип фото для удобства идентификации
+                    string timestamp = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                    string extension = Path.GetExtension(sourceFilePath);
+                    string newFileName = $"Client{clientId}_{type}_{timestamp}{extension}";
+                    
+                    string destinationFilePath = Path.Combine(_appPhotosFolder, newFileName);
+
+                    File.Copy(sourceFilePath, destinationFilePath, true); // Копируем файл, перезаписывая, если существует
+
+                    // Возвращаем относительный путь (имя файла), так как он будет храниться в папке приложения
+                    return newFileName; 
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Ошибка при копировании файла: {ex.Message}", "Ошибка файла", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        private void LoadAndDisplayPhoto(string? photoFileName, System.Windows.Controls.Image imageControl, System.Windows.Controls.TextBlock pathTextBlock)
+        {
+            if (!string.IsNullOrWhiteSpace(photoFileName))
+            {
+                string fullPath = Path.Combine(_appPhotosFolder, photoFileName);
+                if (File.Exists(fullPath))
+                {
+                    try
+                    {
+                        BitmapImage bitmap = new BitmapImage();
+                        bitmap.BeginInit();
+                        bitmap.UriSource = new Uri(fullPath, UriKind.Absolute);
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad; // Чтобы файл не был заблокирован
+                        bitmap.EndInit();
+                        imageControl.Source = bitmap;
+                        pathTextBlock.Text = photoFileName; // Показываем только имя файла
+                    }
+                    catch (Exception ex)
+                    {
+                        imageControl.Source = null;
+                        pathTextBlock.Text = "Ошибка загрузки фото";
+                        // MessageBox.Show($"Ошибка отображения фото: {ex.Message}", "Ошибка"); // Можно раскомментировать для отладки
+                    }
+                }
+                else
+                {
+                    imageControl.Source = null;
+                    pathTextBlock.Text = "Файл не найден";
+                }
+            }
+            else
+            {
+                imageControl.Source = null;
+                pathTextBlock.Text = string.Empty;
+            }
+        }
+
 
         private void OkButton_Click(object sender, RoutedEventArgs e)
         {
@@ -45,16 +163,19 @@ namespace FitnessTrainerPro.UI
 
             CurrentMeasurement.MeasurementDate = MeasurementDatePicker.SelectedDate.Value;
             
-            // Парсинг и валидация числовых значений
-            CurrentMeasurement.WeightKg = TryParseNullableDouble(WeightTextBox.Text, "Вес");
-            CurrentMeasurement.ChestCm = TryParseNullableDouble(ChestTextBox.Text, "Обхват груди");
-            CurrentMeasurement.WaistCm = TryParseNullableDouble(WaistTextBox.Text, "Обхват талии");
-            CurrentMeasurement.HipsCm = TryParseNullableDouble(HipsTextBox.Text, "Обхват бедер");
-            
-            // Проверяем, была ли ошибка парсинга (если метод TryParseNullableDouble вернул null при непустом тексте, но это обрабатывается внутри него)
-            // Дополнительная валидация может быть здесь, если TryParseNullableDouble не показывает MessageBox
+            bool parsingError = false;
+            CurrentMeasurement.WeightKg = TryParseNullableDouble(WeightTextBox.Text, "Вес", ref parsingError);
+            CurrentMeasurement.ChestCm = TryParseNullableDouble(ChestTextBox.Text, "Обхват груди", ref parsingError);
+            CurrentMeasurement.WaistCm = TryParseNullableDouble(WaistTextBox.Text, "Обхват талии", ref parsingError);
+            CurrentMeasurement.HipsCm = TryParseNullableDouble(HipsTextBox.Text, "Обхват бедер", ref parsingError);
 
+            if (parsingError) // Если была ошибка парсинга хотя бы одного числового поля, не закрываем окно
+            {
+                return; 
+            }
+            
             CurrentMeasurement.Notes = NotesTextBox.Text;
+            // PhotoBeforePath и PhotoAfterPath уже установлены в CurrentMeasurement при выборе файлов
 
             this.DialogResult = true;
         }
@@ -64,36 +185,27 @@ namespace FitnessTrainerPro.UI
             this.DialogResult = false;
         }
 
-        // Вспомогательный метод для парсинга nullable double
-        private double? TryParseNullableDouble(string text, string fieldName)
+        private double? TryParseNullableDouble(string text, string fieldName, ref bool errorOccurred)
         {
             if (string.IsNullOrWhiteSpace(text))
             {
-                return null; // Поле не заполнено, это допустимо для nullable double
+                return null; 
             }
-            // Используем CultureInfo.InvariantCulture для правильного парсинга десятичного разделителя (точка)
             if (double.TryParse(text.Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out double result))
             {
-                if (result < 0) // Дополнительная проверка на отрицательные значения, если нужно
+                if (result < 0) 
                 {
                      MessageBox.Show($"{fieldName} не может быть отрицательным.", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Error);
-                     return null; // Или какое-то специальное значение, чтобы прервать сохранение
+                     errorOccurred = true;
+                     return null; 
                 }
                 return result;
             }
             else
             {
                 MessageBox.Show($"Неверный формат числа для поля '{fieldName}'. Используйте цифры и, возможно, десятичную точку.", "Ошибка валидации", MessageBoxButton.OK, MessageBoxImage.Error);
-                // Чтобы прервать сохранение, можно либо бросить исключение, либо установить флаг,
-                // либо сделать так, чтобы OkButton_Click проверял результат этого метода.
-                // Простейший вариант - просто не присваивать значение и дать пользователю исправить.
-                // Но для прерывания сохранения - DialogResult не должен установиться в true.
-                // Пока что, если парсинг неудачен, вернем null, и поле останется null или старым.
-                // Для строгости можно сделать так, чтобы OkButton_Click не продолжал, если хоть один парсинг вернул "ошибочный" null.
-                // Мы это не делаем здесь явно, но MessageBox покажет ошибку.
-                return null; // Возвращаем null, если парсинг не удался. Окно не закроется автоматически с DialogResult=true.
-                             // Пользователь должен будет исправить ошибку.
-                             // Чтобы OkButton_Click прервался, нужно добавить проверку там.
+                errorOccurred = true;
+                return null; 
             }
         }
     }
