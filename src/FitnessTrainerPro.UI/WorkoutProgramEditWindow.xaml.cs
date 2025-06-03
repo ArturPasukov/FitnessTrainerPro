@@ -2,7 +2,7 @@ using System.Windows;
 using FitnessTrainerPro.Core.Models;
 using System.Collections.ObjectModel;
 using System.Linq;
-// using FitnessTrainerPro.Data; // Этот using здесь, вероятно, не нужен напрямую
+using FitnessTrainerPro.Data; // <--- ДОБАВЛЕНО ЭТО
 
 namespace FitnessTrainerPro.UI
 {
@@ -91,20 +91,11 @@ namespace FitnessTrainerPro.UI
                 {
                     ProgramExercise newProgramExercise = paramsWindow.CurrentProgramExercise;
                     
-                    // Убедимся, что ExerciseID установлен правильно, а навигационное свойство Exercise
-                    // не будет вызывать проблем при сохранении в новом контексте.
-                    // Если ProgramExerciseParamsWindow уже установил newProgramExercise.ExerciseID,
-                    // и если newProgramExercise.Exercise указывает на chosenExercise (из другого контекста),
-                    // то перед добавлением в список, который будет сохранен, лучше убрать эту прямую ссылку на объект.
-                    // EF Core свяжет по ExerciseID.
-                    
-                    // Это изменение, которое должно помочь:
                     if (newProgramExercise.Exercise != null && newProgramExercise.Exercise.ExerciseID != newProgramExercise.ExerciseID)
                     {
-                        // На всякий случай, если ExerciseID в newProgramExercise не совпадает с Exercise.ExerciseID
                         newProgramExercise.ExerciseID = newProgramExercise.Exercise.ExerciseID;
                     }
-                    newProgramExercise.Exercise = null; // <--- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ! Отсоединяем объект Exercise.
+                    newProgramExercise.Exercise = null; // Теперь это присвоение корректно, т.к. свойство nullable
 
                     ProgramExercisesList.Add(newProgramExercise);
                     ResortProgramExercisesList();
@@ -121,17 +112,25 @@ namespace FitnessTrainerPro.UI
                 return;
             }
 
+            // Если Exercise не был загружен (хотя должен быть через Include в WorkoutProgramManagementWindow)
             if (selectedProgramExercise.Exercise == null && selectedProgramExercise.ExerciseID > 0)
             {
-                 // Попытка загрузить Exercise, если он не был загружен.
-                 // Это не идеальное место, лучше грузить все сразу.
-                 using(var tempCtx = new FitnessDbContext())
+                 try
                  {
-                    selectedProgramExercise.Exercise = tempCtx.Exercises.Find(selectedProgramExercise.ExerciseID);
+                     using(var tempCtx = new FitnessDbContext()) // FitnessDbContext теперь должен быть виден
+                     {
+                        selectedProgramExercise.Exercise = tempCtx.Exercises.Find(selectedProgramExercise.ExerciseID);
+                     }
                  }
-                 if (selectedProgramExercise.Exercise == null)
+                 catch (System.Exception ex)
                  {
-                    MessageBox.Show("Ошибка: детали основного упражнения не могут быть загружены.", "Ошибка данных");
+                    MessageBox.Show($"Не удалось подгрузить детали упражнения: {ex.Message}", "Ошибка данных");
+                    // Можно решить не продолжать, если Exercise критичен для редактирования параметров
+                 }
+                 
+                 if (selectedProgramExercise.Exercise == null) // Повторная проверка после попытки загрузки
+                 {
+                    MessageBox.Show("Ошибка: детали основного упражнения не могут быть загружены для редактирования параметров.", "Ошибка данных");
                     return;
                  }
             }
@@ -141,8 +140,6 @@ namespace FitnessTrainerPro.UI
 
             if (paramsWindow.ShowDialog() == true)
             {
-                // selectedProgramExercise уже изменен
-                // Для обновления отображения в ListView, если ProgramExercise не INotifyPropertyChanged:
                 ResortProgramExercisesList(); 
                 ProgramExercisesListView.Items.Refresh(); 
             }
