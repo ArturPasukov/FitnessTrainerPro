@@ -258,12 +258,19 @@ namespace FitnessTrainerPro.UI
             programManagementWindow.ShowDialog();
         }
 
-        // НОВЫЙ МЕТОД ДЛЯ КНОПКИ "АНАЛИТИКА"
         private void OpenAnalyticsButton_Click(object sender, RoutedEventArgs e)
         {
             AnalyticsWindow analyticsWindow = new AnalyticsWindow();
             analyticsWindow.Owner = this;
             analyticsWindow.ShowDialog();
+        }
+
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "СРАВНИТЬ ПРОГРАММЫ"
+        private void CompareProgramsButton_Click(object sender, RoutedEventArgs e)
+        {
+            ProgramEffectivenessWindow effectivenessWindow = new ProgramEffectivenessWindow();
+            effectivenessWindow.Owner = this;
+            effectivenessWindow.ShowDialog();
         }
     } 
 }

@@ -1,15 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-// using System.Windows.Controls; // SelectionChangedEventArgs больше не нужен
 using FitnessTrainerPro.Core.Models;
 using FitnessTrainerPro.Data;
-using LiveChartsCore; 
-using LiveChartsCore.Defaults; 
-using LiveChartsCore.SkiaSharpView; 
-using LiveChartsCore.SkiaSharpView.Painting; 
-using SkiaSharp; 
+using System.Globalization; // Для форматирования чисел
+using System.Windows.Controls; // <--- ДОБАВЛЕНА ЭТА ДИРЕКТИВА USING
 
 namespace FitnessTrainerPro.UI
 {
@@ -18,32 +13,7 @@ namespace FitnessTrainerPro.UI
         public AnalyticsWindow()
         {
             InitializeComponent();
-            InitializeWeightChart();
-        }
-
-        private void InitializeWeightChart()
-        {
-            WeightChart.XAxes = new List<Axis>
-            {
-                new Axis
-                {
-                    Name = "Дата замера",
-                    Labeler = value => new DateTime((long)value).ToString("dd.MM.yy"), 
-                    UnitWidth = TimeSpan.FromDays(1).Ticks, 
-                    MinStep = TimeSpan.FromDays(1).Ticks,
-                    TextSize = 10 
-                }
-            };
-            WeightChart.YAxes = new List<Axis>
-            {
-                new Axis
-                {
-                    Name = "Вес, кг",
-                    MinLimit = 0, 
-                    TextSize = 10 
-                }
-            };
-            WeightChart.Series = new ISeries[0];
+            // Инициализация графика больше не нужна
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -51,7 +21,7 @@ namespace FitnessTrainerPro.UI
             LoadClientsIntoComboBox();
             EndDatePicker.SelectedDate = DateTime.Today;
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
-            // Не вызываем LoadWeightChartData здесь, ждем нажатия кнопки
+            ClearResults(); // Очищаем текстовые поля при загрузке
         }
 
         private void LoadClientsIntoComboBox()
@@ -64,11 +34,7 @@ namespace FitnessTrainerPro.UI
                     ClientsComboBox.ItemsSource = clients;
                     if (clients.Any())
                     {
-                        ClientsComboBox.SelectedIndex = 0; 
-                    }
-                    else
-                    {
-                        WeightChart.Series = new ISeries[0];
+                        ClientsComboBox.SelectedIndex = 0;
                     }
                 }
             }
@@ -77,57 +43,38 @@ namespace FitnessTrainerPro.UI
                 MessageBox.Show($"Ошибка загрузки списка клиентов: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-
-        // Методы ClientsComboBox_SelectionChanged и Dates_SelectedDateChanged УДАЛЕНЫ ИЛИ ЗАКОММЕНТИРОВАНЫ
-        /* 
-        private void ClientsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (IsUIDataReadyForChart())
-            {
-                LoadWeightChartData();
-            }
-        }
-
-        private void Dates_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (IsUIDataReadyForChart())
-            {
-                LoadWeightChartData();
-            }
-        }
-        */
         
-        private bool IsUIDataReadyForChart() // Этот метод все еще полезен
+        private void ClearResults()
         {
-            return ClientsComboBox.SelectedItem != null && 
-                   StartDatePicker.SelectedDate.HasValue && 
-                   EndDatePicker.SelectedDate.HasValue;
+            WeightChangeTextBlock.Text = "-";
+            ChestChangeTextBlock.Text = "-";
+            WaistChangeTextBlock.Text = "-";
+            HipsChangeTextBlock.Text = "-";
         }
 
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "ПОСТРОИТЬ ГРАФИК"
-        private void PlotChartButton_Click(object sender, RoutedEventArgs e)
+        private void CalculateButton_Click(object sender, RoutedEventArgs e)
         {
-            LoadWeightChartData(); // Вызываем загрузку и построение графика
+            CalculateAndDisplayPercentageChange();
         }
 
-        private void LoadWeightChartData()
+        private void CalculateAndDisplayPercentageChange()
         {
-            if (!IsUIDataReadyForChart())
+            ClearResults(); 
+
+            if (ClientsComboBox.SelectedItem is not Client selectedClient ||
+                !StartDatePicker.SelectedDate.HasValue ||
+                !EndDatePicker.SelectedDate.HasValue)
             {
-                // Можно показать сообщение, если пользователь нажал кнопку, но не выбрал все параметры
-                MessageBox.Show("Пожалуйста, выберите клиента и обе даты для построения графика.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
-                WeightChart.Series = new ISeries[0]; 
+                MessageBox.Show("Пожалуйста, выберите клиента и обе даты.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            Client selectedClient = (Client)ClientsComboBox.SelectedItem; 
-            DateTime startDate = StartDatePicker.SelectedDate!.Value.Date; 
-            DateTime endDate = EndDatePicker.SelectedDate!.Value.Date.AddDays(1).AddTicks(-1);
+            DateTime startDate = StartDatePicker.SelectedDate.Value.Date;
+            DateTime endDate = EndDatePicker.SelectedDate.Value.Date.AddDays(1).AddTicks(-1); 
 
-            if (startDate > endDate.Date) 
+            if (startDate > endDate.Date)
             {
                 MessageBox.Show("Дата начала не может быть позже даты окончания.", "Ошибка диапазона дат", MessageBoxButton.OK, MessageBoxImage.Warning);
-                WeightChart.Series = new ISeries[0];
                 return;
             }
 
@@ -135,42 +82,66 @@ namespace FitnessTrainerPro.UI
             {
                 using (var dbContext = new FitnessDbContext())
                 {
-                    var measurements = dbContext.ClientMeasurements
+                    var allMeasurementsInRange = dbContext.ClientMeasurements
                         .Where(m => m.ClientID == selectedClient.ClientID &&
-                                    m.WeightKg.HasValue && 
                                     m.MeasurementDate >= startDate &&
                                     m.MeasurementDate <= endDate)
                         .OrderBy(m => m.MeasurementDate)
                         .ToList();
 
-                    if (measurements.Any())
+                    if (!allMeasurementsInRange.Any())
                     {
-                        var dataPoints = measurements.Select(m => new DateTimePoint(m.MeasurementDate, m.WeightKg!.Value)).ToList();
-                        
-                        WeightChart.Series = new ISeries[]
-                        {
-                            new LineSeries<DateTimePoint>
-                            {
-                                Name = "Вес клиента",
-                                Values = dataPoints,
-                                GeometrySize = 8, 
-                                Stroke = new SolidColorPaint(SKColors.DodgerBlue) { StrokeThickness = 3 },
-                                Fill = null, 
-                                GeometryStroke = new SolidColorPaint(SKColors.CornflowerBlue) { StrokeThickness = 3 }
-                            }
-                        };
+                        MessageBox.Show("Нет замеров для выбранного клиента в указанном диапазоне дат.", "Нет данных", MessageBoxButton.OK, MessageBoxImage.Information);
+                        return;
                     }
-                    else
-                    {
-                        WeightChart.Series = new ISeries[0]; 
-                        MessageBox.Show("Нет данных о весе для выбранного клиента в указанном диапазоне дат.", "Нет данных", MessageBoxButton.OK, MessageBoxImage.Information);
-                    }
+
+                    var firstWeightMeasurement = allMeasurementsInRange.FirstOrDefault(m => m.WeightKg.HasValue);
+                    var lastWeightMeasurement = allMeasurementsInRange.LastOrDefault(m => m.WeightKg.HasValue);
+                    CalculateAndDisplayChange(firstWeightMeasurement?.WeightKg, lastWeightMeasurement?.WeightKg, WeightChangeTextBlock, "кг");
+
+                    var firstChestMeasurement = allMeasurementsInRange.FirstOrDefault(m => m.ChestCm.HasValue);
+                    var lastChestMeasurement = allMeasurementsInRange.LastOrDefault(m => m.ChestCm.HasValue);
+                    CalculateAndDisplayChange(firstChestMeasurement?.ChestCm, lastChestMeasurement?.ChestCm, ChestChangeTextBlock, "см");
+
+                    var firstWaistMeasurement = allMeasurementsInRange.FirstOrDefault(m => m.WaistCm.HasValue);
+                    var lastWaistMeasurement = allMeasurementsInRange.LastOrDefault(m => m.WaistCm.HasValue);
+                    CalculateAndDisplayChange(firstWaistMeasurement?.WaistCm, lastWaistMeasurement?.WaistCm, WaistChangeTextBlock, "см");
+
+                    var firstHipsMeasurement = allMeasurementsInRange.FirstOrDefault(m => m.HipsCm.HasValue);
+                    var lastHipsMeasurement = allMeasurementsInRange.LastOrDefault(m => m.HipsCm.HasValue);
+                    CalculateAndDisplayChange(firstHipsMeasurement?.HipsCm, lastHipsMeasurement?.HipsCm, HipsChangeTextBlock, "см");
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Ошибка загрузки данных для графика: {ex.Message}\n{ex.InnerException?.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-                WeightChart.Series = new ISeries[0]; 
+                MessageBox.Show($"Ошибка расчета прогресса: {ex.Message}", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CalculateAndDisplayChange(double? startValue, double? endValue, TextBlock targetTextBlock, string unit)
+        {
+            if (startValue.HasValue && endValue.HasValue && startValue.Value != 0)
+            {
+                double change = endValue.Value - startValue.Value;
+                double percentageChange = (change / startValue.Value) * 100;
+                string sign = change >= 0 ? "+" : ""; // Знак '+' только для положительных или нуля
+                targetTextBlock.Text = $"{startValue.Value:F1} {unit} -> {endValue.Value:F1} {unit} ({sign}{change:F1} {unit}, {sign}{percentageChange:F1}%)";
+            }
+            else if (startValue.HasValue && endValue.HasValue && startValue.Value == 0 && endValue.Value != 0)
+            {
+                 targetTextBlock.Text = $"Начало: 0 {unit}, Конец: {endValue.Value:F1} {unit} (изм. не рассч.)";
+            }
+            else if (startValue.HasValue && !endValue.HasValue)
+            {
+                targetTextBlock.Text = $"Начало: {startValue.Value:F1} {unit}, конечного замера нет";
+            }
+             else if (!startValue.HasValue && endValue.HasValue)
+            {
+                targetTextBlock.Text = $"Конец: {endValue.Value:F1} {unit}, начального замера нет";
+            }
+            else
+            {
+                targetTextBlock.Text = "Недостаточно данных";
             }
         }
     }

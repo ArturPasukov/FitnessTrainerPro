@@ -4,37 +4,64 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
-        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         mc:Ignorable="d"
-        Title="Аналитика прогресса" Height="600" Width="800"
+        Title="Аналитика прогресса (в процентах)" Height="400" Width="500" 
         WindowStartupLocation="CenterOwner" Loaded="Window_Loaded">
-    <Grid Margin="10">
+    <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Панель выбора клиента и дат -->
-            <RowDefinition Height="*"/>    <!-- График -->
-            <RowDefinition Height="Auto"/> <!-- НОВАЯ СТРОКА: Кнопка Построить -->
+            <RowDefinition Height="Auto"/> <!-- Результаты в процентах -->
+            <RowDefinition Height="*"/>    <!-- Пустое пространство -->
+            <RowDefinition Height="Auto"/> <!-- Кнопка Рассчитать -->
         </Grid.RowDefinitions>
 
         <!-- Панель фильтров -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Label Content="Клиент:" VerticalAlignment="Center"/>
-            <!-- УБРАН SelectionChanged -->
-            <ComboBox Name="ClientsComboBox" Width="200" Margin="5,0" VerticalAlignment="Center" DisplayMemberPath="FullName" /> 
-            
-            <Label Content="С:" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <!-- УБРАН SelectedDateChanged -->
-            <DatePicker Name="StartDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" />
-            
-            <Label Content="По:" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <!-- УБРАН SelectedDateChanged -->
-            <DatePicker Name="EndDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" />
+        <StackPanel Grid.Row="0" Orientation="Vertical" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Клиент:" VerticalAlignment="Center"/>
+                <ComboBox Name="ClientsComboBox" Width="200" Margin="5,0,0,5" VerticalAlignment="Center" DisplayMemberPath="FullName" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <Label Content="С:" VerticalAlignment="Center"/>
+                <DatePicker Name="StartDatePicker" Width="120" Margin="32,0,0,0" VerticalAlignment="Center" /> <!-- Поправил Margin для выравнивания -->
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                <Label Content="По:" VerticalAlignment="Center"/>
+                <DatePicker Name="EndDatePicker" Width="120" Margin="27,0,0,0" VerticalAlignment="Center" /> <!-- Поправил Margin для выравнивания -->
+            </StackPanel>
         </StackPanel>
 
-        <!-- График веса -->
-        <lvc:CartesianChart Name="WeightChart" Grid.Row="1" Margin="0,0,0,10" /> <!-- Добавлен Margin -->
+        <!-- Результаты в процентах -->
+        <StackPanel Grid.Row="1" Margin="0,10,0,10">
+            <TextBlock Text="Изменение за период:" FontWeight="Bold" FontSize="14" Margin="0,0,0,10"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-        <!-- НОВАЯ КНОПКА для построения графика -->
-        <Button Name="PlotChartButton" Grid.Row="2" Content="Построить график" Width="150" HorizontalAlignment="Right" Click="PlotChartButton_Click"/>
+                <Label Grid.Row="0" Grid.Column="0" Content="Вес:" />
+                <TextBlock Name="WeightChangeTextBlock" Grid.Row="0" Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Center" Text="-"/>
+                
+                <Label Grid.Row="1" Grid.Column="0" Content="Грудь:" />
+                <TextBlock Name="ChestChangeTextBlock" Grid.Row="1" Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Center" Text="-"/>
+
+                <Label Grid.Row="2" Grid.Column="0" Content="Талия:" />
+                <TextBlock Name="WaistChangeTextBlock" Grid.Row="2" Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Center" Text="-"/>
+
+                <Label Grid.Row="3" Grid.Column="0" Content="Бедра:" />
+                <TextBlock Name="HipsChangeTextBlock" Grid.Row="3" Grid.Column="1" Margin="5,0,0,0" VerticalAlignment="Center" Text="-"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- Кнопка для расчета -->
+        <Button Name="CalculateButton" Grid.Row="3" Content="Рассчитать прогресс" Width="180" HorizontalAlignment="Right" Click="CalculateButton_Click"/>
 
     </Grid>
 </Window>
