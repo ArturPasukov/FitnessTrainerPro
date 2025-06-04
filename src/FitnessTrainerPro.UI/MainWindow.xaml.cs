@@ -5,7 +5,7 @@ using System.Linq;
 using FitnessTrainerPro.Core.Models;
 using System.Diagnostics;
 using System.Windows.Navigation;
-using FitnessTrainerPro.Core.Services;
+using FitnessTrainerPro.Core.Services; // Убедись, что этот using есть
 
 namespace FitnessTrainerPro.UI
 {
@@ -28,35 +28,7 @@ namespace FitnessTrainerPro.UI
             }
         }
 
-        private void LoadExercises()
-    
-        try
-        {
-            using (var dbContext = new FitnessDbContext())
-            {
-                IQueryable<Exercise> query = dbContext.Exercises.AsQueryable();
-
-                // Получаем значения фильтров из TextBox'ов
-                string filterName = FilterNameTextBox.Text; // Trim() будет внутри сервиса
-                string filterMuscleGroup = FilterMuscleGroupTextBox.Text;
-                string filterEquipment = FilterEquipmentTextBox.Text;
-
-                // Применяем фильтры через новый сервис
-                query = ExerciseFilterService.ApplyFilters(query, filterName, filterMuscleGroup, filterEquipment);
-
-                ExercisesListView.ItemsSource = query.OrderBy(ex => ex.Name).ToList();
-            }
-        }
-        catch (System.Exception ex)
-        {
-            string errorMessage = $"Ошибка загрузки упражнений: {ex.Message}";
-            if (ex.InnerException != null)
-            {
-                errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
-            }
-            MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        
+        // ОСТАВЛЯЕМ ТОЛЬКО ЭТУ ВЕРСИЮ LoadExercises
         private void LoadExercises()
         {
             try
@@ -65,26 +37,13 @@ namespace FitnessTrainerPro.UI
                 {
                     IQueryable<Exercise> query = dbContext.Exercises.AsQueryable();
 
-                    string filterName = FilterNameTextBox.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(filterName))
-                    {
-                        string lowerFilterName = filterName.ToLower(); 
-                        query = query.Where(ex => ex.Name != null && ex.Name.ToLower().Contains(lowerFilterName));
-                    }
+                    // Получаем значения фильтров из TextBox'ов
+                    string filterName = FilterNameTextBox.Text; 
+                    string filterMuscleGroup = FilterMuscleGroupTextBox.Text;
+                    string filterEquipment = FilterEquipmentTextBox.Text;
 
-                    string filterMuscleGroup = FilterMuscleGroupTextBox.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(filterMuscleGroup))
-                    {
-                        string lowerFilterMuscleGroup = filterMuscleGroup.ToLower();
-                        query = query.Where(ex => ex.MuscleGroup != null && ex.MuscleGroup.ToLower().Contains(lowerFilterMuscleGroup));
-                    }
-
-                    string filterEquipment = FilterEquipmentTextBox.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(filterEquipment))
-                    {
-                        string lowerFilterEquipment = filterEquipment.ToLower();
-                        query = query.Where(ex => ex.EquipmentNeeded != null && ex.EquipmentNeeded.ToLower().Contains(lowerFilterEquipment));
-                    }
+                    // Применяем фильтры через новый сервис
+                    query = ExerciseFilterService.ApplyFilters(query, filterName, filterMuscleGroup, filterEquipment);
 
                     ExercisesListView.ItemsSource = query.OrderBy(ex => ex.Name).ToList();
                 }
@@ -99,6 +58,7 @@ namespace FitnessTrainerPro.UI
                 MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
+        // УДАЛЕНА ДУБЛИРУЮЩАЯСЯ ВЕРСИЯ LoadExercises()
 
         private void ApplyFilterButton_Click(object sender, RoutedEventArgs e)
         {
@@ -294,8 +254,7 @@ namespace FitnessTrainerPro.UI
             analyticsWindow.Owner = this;
             analyticsWindow.ShowDialog();
         }
-
-        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "СРАВНИТЬ ПРОГРАММЫ"
+        
         private void CompareProgramsButton_Click(object sender, RoutedEventArgs e)
         {
             ProgramEffectivenessWindow effectivenessWindow = new ProgramEffectivenessWindow();
