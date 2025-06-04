@@ -5,6 +5,7 @@ using System.Linq;
 using FitnessTrainerPro.Core.Models;
 using System.Diagnostics;
 using System.Windows.Navigation;
+using FitnessTrainerPro.Core.Services;
 
 namespace FitnessTrainerPro.UI
 {
@@ -27,6 +28,35 @@ namespace FitnessTrainerPro.UI
             }
         }
 
+        private void LoadExercises()
+    
+        try
+        {
+            using (var dbContext = new FitnessDbContext())
+            {
+                IQueryable<Exercise> query = dbContext.Exercises.AsQueryable();
+
+                // Получаем значения фильтров из TextBox'ов
+                string filterName = FilterNameTextBox.Text; // Trim() будет внутри сервиса
+                string filterMuscleGroup = FilterMuscleGroupTextBox.Text;
+                string filterEquipment = FilterEquipmentTextBox.Text;
+
+                // Применяем фильтры через новый сервис
+                query = ExerciseFilterService.ApplyFilters(query, filterName, filterMuscleGroup, filterEquipment);
+
+                ExercisesListView.ItemsSource = query.OrderBy(ex => ex.Name).ToList();
+            }
+        }
+        catch (System.Exception ex)
+        {
+            string errorMessage = $"Ошибка загрузки упражнений: {ex.Message}";
+            if (ex.InnerException != null)
+            {
+                errorMessage += $"\n\nВнутренняя ошибка: {ex.InnerException.Message}";
+            }
+            MessageBox.Show(errorMessage, "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        
         private void LoadExercises()
         {
             try
