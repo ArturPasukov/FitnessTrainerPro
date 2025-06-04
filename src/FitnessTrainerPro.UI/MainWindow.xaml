@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:FitnessTrainerPro.UI"
         xmlns:converters="clr-namespace:FitnessTrainerPro.UI.Converters"
         mc:Ignorable="d"
-        Title="Фитнес-трекер для тренера" Height="550" Width="1150" Loaded="Window_Loaded"> <!-- Увеличена ширина еще немного -->
+        Title="Фитнес-трекер для тренера" Height="550" Width="1150" Loaded="Window_Loaded">
 
     <Window.Resources>
         <converters:IsNullOrEmptyStringConverter x:Key="IsNullOrEmptyStringConverter"/>
@@ -15,35 +15,25 @@
 
     <DockPanel Margin="10">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <!-- Кнопки для упражнений -->
             <Button Name="AddExerciseButton" Content="Добавить упр." Width="110" Margin="5" Click="AddExerciseButton_Click"/>
             <Button Name="EditExerciseButton" Content="Редакт. упр." Width="110" Margin="5" Click="EditExerciseButton_Click"/>
             <Button Name="DeleteExerciseButton" Content="Удалить упр." Width="110" Margin="5" Click="DeleteExerciseButton_Click"/>
-            
             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/> 
-            
             <Button Name="ManageClientsButton" Content="Управление клиентами" Width="160" Margin="5" Click="ManageClientsButton_Click"/>
-            
             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/>
             <Button Name="ManageProgramsButton" Content="Программы тренировок" Width="170" Margin="5" Click="ManageProgramsButton_Click"/>
-
-            <!-- НОВАЯ КНОПКА "АНАЛИТИКА" -->
             <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Margin="5,0"/>
             <Button Name="OpenAnalyticsButton" Content="Аналитика" Width="120" Margin="5" Click="OpenAnalyticsButton_Click"/>
         </StackPanel>
 
-        <!-- СЕКЦИЯ ДЛЯ ФИЛЬТРОВ -->
         <Border DockPanel.Dock="Top" BorderBrush="LightGray" BorderThickness="0,0,0,1" Padding="5" Margin="0,0,0,10">
             <StackPanel Orientation="Horizontal">
                 <Label Content="Название:" VerticalAlignment="Center"/>
                 <TextBox Name="FilterNameTextBox" Width="150" Margin="5,0" VerticalAlignment="Center"/>
-                
                 <Label Content="Группа мышц:" Margin="10,0,0,0" VerticalAlignment="Center"/>
                 <TextBox Name="FilterMuscleGroupTextBox" Width="150" Margin="5,0" VerticalAlignment="Center"/>
-                
                 <Label Content="Инвентарь:" Margin="10,0,0,0" VerticalAlignment="Center"/>
                 <TextBox Name="FilterEquipmentTextBox" Width="150" Margin="5,0" VerticalAlignment="Center"/>
-                
                 <Button Name="ApplyFilterButton" Content="Применить" Width="100" Margin="10,0,0,0" Click="ApplyFilterButton_Click"/>
                 <Button Name="ClearFilterButton" Content="Сбросить" Width="100" Margin="5,0,0,0" Click="ClearFilterButton_Click"/>
             </StackPanel>
@@ -55,7 +45,6 @@
                     <GridViewColumn Header="ID" DisplayMemberBinding="{Binding ExerciseID}" Width="40"/>
                     <GridViewColumn Header="Название" DisplayMemberBinding="{Binding Name}" Width="130"/>
                     <GridViewColumn Header="Группа мышц" DisplayMemberBinding="{Binding MuscleGroup}" Width="100"/>
-                    
                     <GridViewColumn Header="URL Видео" Width="180">
                         <GridViewColumn.CellTemplate>
                             <DataTemplate>
@@ -77,9 +66,7 @@
                             </DataTemplate>
                         </GridViewColumn.CellTemplate>
                     </GridViewColumn>
-                    
                     <GridViewColumn Header="Инвентарь" DisplayMemberBinding="{Binding EquipmentNeeded}" Width="100"/> 
-                    
                     <GridViewColumn Header="Описание" DisplayMemberBinding="{Binding Description}" Width="Auto"/>
                 </GridView>
             </ListView.View>

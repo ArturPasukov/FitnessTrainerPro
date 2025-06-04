@@ -2,8 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FitnessTrainerPro.UI"
-             StartupUri="MainWindow.xaml">
+             StartupUri="MainWindow.xaml"> <!-- Указывает, какое окно запускать первым -->
     <Application.Resources>
-         
+        <!-- Здесь можно определять глобальные ресурсы, стили и т.д. -->
     </Application.Resources>
 </Application>

@@ -12,23 +12,29 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/> <!-- Панель выбора клиента и дат -->
             <RowDefinition Height="*"/>    <!-- График -->
+            <RowDefinition Height="Auto"/> <!-- НОВАЯ СТРОКА: Кнопка Построить -->
         </Grid.RowDefinitions>
 
         <!-- Панель фильтров -->
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
             <Label Content="Клиент:" VerticalAlignment="Center"/>
-            <ComboBox Name="ClientsComboBox" Width="200" Margin="5,0" VerticalAlignment="Center" DisplayMemberPath="FullName" SelectionChanged="ClientsComboBox_SelectionChanged"/> 
-            <!-- FullName - это свойство, которое нам нужно будет добавить в модель Client или ViewModel -->
+            <!-- УБРАН SelectionChanged -->
+            <ComboBox Name="ClientsComboBox" Width="200" Margin="5,0" VerticalAlignment="Center" DisplayMemberPath="FullName" /> 
             
             <Label Content="С:" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <DatePicker Name="StartDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" SelectedDateChanged="Dates_SelectedDateChanged"/>
+            <!-- УБРАН SelectedDateChanged -->
+            <DatePicker Name="StartDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" />
             
             <Label Content="По:" Margin="10,0,0,0" VerticalAlignment="Center"/>
-            <DatePicker Name="EndDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" SelectedDateChanged="Dates_SelectedDateChanged"/>
+            <!-- УБРАН SelectedDateChanged -->
+            <DatePicker Name="EndDatePicker" Width="120" Margin="5,0" VerticalAlignment="Center" />
         </StackPanel>
 
         <!-- График веса -->
-        <lvc:CartesianChart Name="WeightChart" Grid.Row="1" />
+        <lvc:CartesianChart Name="WeightChart" Grid.Row="1" Margin="0,0,0,10" /> <!-- Добавлен Margin -->
+
+        <!-- НОВАЯ КНОПКА для построения графика -->
+        <Button Name="PlotChartButton" Grid.Row="2" Content="Построить график" Width="150" HorizontalAlignment="Right" Click="PlotChartButton_Click"/>
 
     </Grid>
 </Window>

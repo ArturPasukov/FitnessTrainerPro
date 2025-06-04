@@ -2,14 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
+// using System.Windows.Controls; // SelectionChangedEventArgs больше не нужен
 using FitnessTrainerPro.Core.Models;
 using FitnessTrainerPro.Data;
-using LiveChartsCore;
-using LiveChartsCore.Defaults;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
+using LiveChartsCore; 
+using LiveChartsCore.Defaults; 
+using LiveChartsCore.SkiaSharpView; 
+using LiveChartsCore.SkiaSharpView.Painting; 
+using SkiaSharp; 
 
 namespace FitnessTrainerPro.UI
 {
@@ -18,7 +18,7 @@ namespace FitnessTrainerPro.UI
         public AnalyticsWindow()
         {
             InitializeComponent();
-            InitializeWeightChart(); 
+            InitializeWeightChart();
         }
 
         private void InitializeWeightChart()
@@ -28,13 +28,10 @@ namespace FitnessTrainerPro.UI
                 new Axis
                 {
                     Name = "Дата замера",
-                    // Для DateTimePoint, значение value - это DateTime.Ticks
                     Labeler = value => new DateTime((long)value).ToString("dd.MM.yy"), 
-                    // Единица измерения - это длительность одного "шага" на оси в Ticks
                     UnitWidth = TimeSpan.FromDays(1).Ticks, 
-                    // Минимальный шаг между метками также в Ticks
-                    MinStep = TimeSpan.FromDays(1).Ticks, 
-                    TextSize = 10
+                    MinStep = TimeSpan.FromDays(1).Ticks,
+                    TextSize = 10 
                 }
             };
             WeightChart.YAxes = new List<Axis>
@@ -42,12 +39,11 @@ namespace FitnessTrainerPro.UI
                 new Axis
                 {
                     Name = "Вес, кг",
-                    MinLimit = 0, // Начнем с 0, график сам подберет верхний предел
-                    // MaxLimit = 150, // Можно задать максимальный предел, если нужно
-                    TextSize = 10
+                    MinLimit = 0, 
+                    TextSize = 10 
                 }
             };
-            WeightChart.Series = new ISeries[0]; // Изначально график пуст
+            WeightChart.Series = new ISeries[0];
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -55,6 +51,7 @@ namespace FitnessTrainerPro.UI
             LoadClientsIntoComboBox();
             EndDatePicker.SelectedDate = DateTime.Today;
             StartDatePicker.SelectedDate = DateTime.Today.AddMonths(-1);
+            // Не вызываем LoadWeightChartData здесь, ждем нажатия кнопки
         }
 
         private void LoadClientsIntoComboBox()
@@ -81,6 +78,8 @@ namespace FitnessTrainerPro.UI
             }
         }
 
+        // Методы ClientsComboBox_SelectionChanged и Dates_SelectedDateChanged УДАЛЕНЫ ИЛИ ЗАКОММЕНТИРОВАНЫ
+        /* 
         private void ClientsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (IsUIDataReadyForChart())
@@ -96,18 +95,27 @@ namespace FitnessTrainerPro.UI
                 LoadWeightChartData();
             }
         }
+        */
         
-        private bool IsUIDataReadyForChart()
+        private bool IsUIDataReadyForChart() // Этот метод все еще полезен
         {
             return ClientsComboBox.SelectedItem != null && 
                    StartDatePicker.SelectedDate.HasValue && 
                    EndDatePicker.SelectedDate.HasValue;
         }
 
+        // НОВЫЙ ОБРАБОТЧИК ДЛЯ КНОПКИ "ПОСТРОИТЬ ГРАФИК"
+        private void PlotChartButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadWeightChartData(); // Вызываем загрузку и построение графика
+        }
+
         private void LoadWeightChartData()
         {
             if (!IsUIDataReadyForChart())
             {
+                // Можно показать сообщение, если пользователь нажал кнопку, но не выбрал все параметры
+                MessageBox.Show("Пожалуйста, выберите клиента и обе даты для построения графика.", "Внимание", MessageBoxButton.OK, MessageBoxImage.Information);
                 WeightChart.Series = new ISeries[0]; 
                 return;
             }
@@ -137,8 +145,6 @@ namespace FitnessTrainerPro.UI
 
                     if (measurements.Any())
                     {
-                        // Преобразуем замеры в точки для графика
-                        // DateTimePoint(DateTime date, double value)
                         var dataPoints = measurements.Select(m => new DateTimePoint(m.MeasurementDate, m.WeightKg!.Value)).ToList();
                         
                         WeightChart.Series = new ISeries[]
@@ -151,13 +157,13 @@ namespace FitnessTrainerPro.UI
                                 Stroke = new SolidColorPaint(SKColors.DodgerBlue) { StrokeThickness = 3 },
                                 Fill = null, 
                                 GeometryStroke = new SolidColorPaint(SKColors.CornflowerBlue) { StrokeThickness = 3 }
-                                // TooltipLabelFormatter = (point) => $"{new DateTime((long)point.SecondaryValue).ToString("dd.MM.yyyy")}: {point.PrimaryValue} кг" // Для кастомных тултипов
                             }
                         };
                     }
                     else
                     {
                         WeightChart.Series = new ISeries[0]; 
+                        MessageBox.Show("Нет данных о весе для выбранного клиента в указанном диапазоне дат.", "Нет данных", MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                 }
             }
