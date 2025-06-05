@@ -4,17 +4,21 @@ using Moq;
 using Microsoft.EntityFrameworkCore;
 using FitnessTrainerPro.Core.Models;
 using FitnessTrainerPro.Data;
-// using FitnessTrainerPro.Data.Services; // Зависит от того, где SimpleExerciseDbService
+// Убедись, что using для твоего сервиса (SimpleExerciseDbService) правильный
+// Например, если он в FitnessTrainerPro.Data.Services:
+// using FitnessTrainerPro.Data.Services; 
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Linq.Expressions;
-using Microsoft.EntityFrameworkCore.ChangeTracking; // Для EntityEntry
-using Microsoft.EntityFrameworkCore.Query;         // <--- ДОБАВЛЕНО ДЛЯ IAsyncQueryProvider
+using Microsoft.EntityFrameworkCore.ChangeTracking; 
+using Microsoft.EntityFrameworkCore.Query;         
 
-// Убедись, что SimpleExerciseDbService и ISimpleExerciseDbService доступны
-// (например, если они в FitnessTrainerPro.Data/Services и FitnessTrainerPro.Core/Services)
+// ПРЕДПОЛАГАЕТСЯ, ЧТО КЛАССЫ ISimpleExerciseDbService и SimpleExerciseDbService УЖЕ СУЩЕСТВУЮТ
+// ISimpleExerciseDbService в FitnessTrainerPro.Core/Services/
+// SimpleExerciseDbService в FitnessTrainerPro.Data/Services/
+// И что SimpleExerciseDbService.UpdateAsync ИЗМЕНЕН, как я предлагал (копирует свойства напрямую).
 
 namespace FitnessTrainerPro.Tests
 {
@@ -23,7 +27,7 @@ namespace FitnessTrainerPro.Tests
     {
         private Mock<FitnessDbContext> _mockDbContext;
         private Mock<DbSet<Exercise>> _mockDbSet;
-        private ISimpleExerciseDbService _dbService;
+        private ISimpleExerciseDbService _dbService; 
         private List<Exercise> _exerciseList;
 
         [SetUp]
@@ -31,8 +35,8 @@ namespace FitnessTrainerPro.Tests
         {
             _exerciseList = new List<Exercise>
             {
-                new Exercise { ExerciseID = 1, Name = "Приседания" },
-                new Exercise { ExerciseID = 2, Name = "Жим лежа" }
+                new Exercise { ExerciseID = 1, Name = "Приседания", Description = "Базовое" },
+                new Exercise { ExerciseID = 2, Name = "Жим лежа", Description = "Для груди" }
             };
 
             _mockDbSet = new Mock<DbSet<Exercise>>();
@@ -50,14 +54,17 @@ namespace FitnessTrainerPro.Tests
             _mockDbSet.Setup(d => d.FindAsync(It.IsAny<object[]>()))
                 .Returns<object[]>(ids => ValueTask.FromResult(_exerciseList.FirstOrDefault(e => e.ExerciseID == (int)ids[0])));
 
+            // ИЗМЕНЕННЫЙ МОК ДЛЯ AddAsync
             _mockDbSet.Setup(d => d.AddAsync(It.IsAny<Exercise>(), It.IsAny<CancellationToken>()))
                 .Callback<Exercise, CancellationToken>((ex, ct) => _exerciseList.Add(ex))
-                .ReturnsAsync((Exercise ex, CancellationToken ct) => 
-                    {
-                        // Создаем мок для EntityEntry<Exercise>
-                        var mockEntry = new Mock<EntityEntry<Exercise>>(ex); // Передаем сущность в конструктор мока
-                        return mockEntry.Object; // Возвращаем мокнутый EntityEntry
-                    });
+                .Returns((Exercise ex, CancellationToken ct) => 
+                    // Возвращаем ValueTask<EntityEntry<Exercise>>. 
+                    // Для простоты можно создать мок EntityEntry без сложной настройки, если его результат не используется.
+                    // Либо, если EntityEntry не используется вообще после вызова AddAsync в сервисе, можно вернуть ValueTask.FromResult<EntityEntry<Exercise>>(null!).
+                    // Но чтобы избежать ошибки "Can not instantiate proxy", лучше не пытаться мокать его через new Mock<EntityEntry<Exercise>>(ex) без нужных зависимостей.
+                    // Простой мок EntityEntry:
+                    ValueTask.FromResult(Mock.Of<EntityEntry<Exercise>>(e => e.Entity == ex && e.State == EntityState.Added)));
+
 
             _mockDbSet.Setup(d => d.Remove(It.IsAny<Exercise>()))
                 .Callback<Exercise>(ex => 
@@ -66,48 +73,21 @@ namespace FitnessTrainerPro.Tests
                     if (itemToRemove != null) _exerciseList.Remove(itemToRemove);
                 });
             
-            _mockDbContext = new Mock<FitnessDbContext>();
+            // _mockDbContext = new Mock<FitnessDbContext>(); // Это если FitnessDbContext имеет конструктор без параметров или который Moq может вызвать
+            // Если FitnessDbContext требует DbContextOptions, но ты хочешь мокать все его методы, то можно так:
+            var options = new DbContextOptions<FitnessDbContext>(); // Фиктивные опции
+            _mockDbContext = new Mock<FitnessDbContext>(options); // Передаем фиктивные опции
+
             _mockDbContext.Setup(c => c.Exercises).Returns(_mockDbSet.Object);
             _mockDbContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             
-            _mockDbContext.Setup(c => c.Entry(It.IsAny<Exercise>())).Returns<Exercise>(entity => 
-            {
-                var mockEntry = new Mock<EntityEntry<Exercise>>(entity); // Передаем сущность
-                mockEntry.Setup(e => e.State).Returns(EntityState.Unchanged); // Начальное состояние
-                mockEntry.SetupSet(e => e.State = EntityState.Modified).Verifiable(); // Для отслеживания изменения состояния
-                
-                // Мок для CurrentValues.SetValues
-                // Это сложнее, т.к. PropertyValues нелегко мокнуть.
-                // Для простоты UpdateAsync в сервисе может напрямую изменять свойства `existing` объекта,
-                // тогда этот сложный мок SetValues не так критичен, если мы проверяем сам _exerciseList.
-                // Если сервис использует _context.Exercises.Update(exercise), то это проще мокнуть:
-                // _mockDbSet.Setup(d => d.Update(It.IsAny<Exercise>())).Callback<Exercise>(ex => { /* логика обновления в _exerciseList */ });
+            // УДАЛЕН СЛОЖНЫЙ МОК ДЛЯ Entry(), так как мы изменили логику UpdateAsync в сервисе
+            // _mockDbContext.Setup(c => c.Entry(It.IsAny<Exercise>())).Returns<Exercise>(entity => ... );
 
-                // Для варианта с _context.Entry(existing).CurrentValues.SetValues(exercise);
-                // оставим как было, он обновляет _exerciseList через замыкание.
-                mockEntry.Setup(e => e.CurrentValues.SetValues(It.IsAny<object>()))
-                         .Callback<object>(obj => {
-                             var updatedEx = obj as Exercise;
-                             if (updatedEx != null) {
-                                 var originalEx = _exerciseList.FirstOrDefault(e => e.ExerciseID == updatedEx.ExerciseID);
-                                 if (originalEx != null) {
-                                     originalEx.Name = updatedEx.Name; 
-                                     originalEx.Description = updatedEx.Description;
-                                     originalEx.MuscleGroup = updatedEx.MuscleGroup;
-                                     originalEx.VideoUrl = updatedEx.VideoUrl;
-                                     originalEx.EquipmentNeeded = updatedEx.EquipmentNeeded;
-                                 }
-                             }
-                         });
-                return mockEntry.Object;
-            });
-
-            // Предполагается, что SimpleExerciseDbService находится в FitnessTrainerPro.Data.Services
+            // Убедись, что класс SimpleExerciseDbService существует и доступен
+            // (например, в проекте FitnessTrainerPro.Data.Services)
             _dbService = new SimpleExerciseDbService(_mockDbContext.Object); 
         }
-
-        // ... (все твои существующие тесты AddAsync, DeleteAsync, UpdateAsync, GetAllAsync, GetByIdAsync) ...
-        // Убедись, что они корректны, например:
 
         [Test]
         public async Task AddAsync_AddsExerciseToContext()
@@ -123,7 +103,12 @@ namespace FitnessTrainerPro.Tests
         public async Task DeleteAsync_RemovesExerciseFromContext()
         {
             int idToDelete = 1;
-            await _dbService.DeleteAsync(idToDelete);
+            // Для Remove передается сам объект, а не только ID
+            var exerciseInstanceToRemove = _exerciseList.First(e => e.ExerciseID == idToDelete); 
+
+            await _dbService.DeleteAsync(idToDelete); // Сервис найдет объект по ID и вызовет Remove
+
+            // Проверяем, что Remove был вызван на DbSet с объектом, имеющим правильный ID
             _mockDbSet.Verify(m => m.Remove(It.Is<Exercise>(e => e.ExerciseID == idToDelete)), Times.Once());
             _mockDbContext.Verify(m => m.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
             Assert.IsFalse(_exerciseList.Any(e => e.ExerciseID == idToDelete));
@@ -132,17 +117,26 @@ namespace FitnessTrainerPro.Tests
         [Test]
         public async Task UpdateAsync_ExerciseExists_UpdatesExerciseInContext()
         {
-            var exerciseToUpdate = new Exercise { ExerciseID = 1, Name = "Обновленные Приседания", Description = "С весом" };
+            // Создаем объект с обновленными данными
+            var exerciseToUpdate = new Exercise { ExerciseID = 1, Name = "Обновленные Приседания", Description = "С большим весом" };
+            
+            // Моделируем, что FindAsync вернет существующий объект, который затем будет изменен
+            var originalExerciseInList = _exerciseList.First(e => e.ExerciseID == exerciseToUpdate.ExerciseID);
+            // Важно, чтобы FindAsync возвращал _копию_ или чтобы сервис работал с загруженным из контекста объектом.
+            // В нашем моке FindAsync возвращает объект из _exerciseList.
+            // SimpleExerciseDbService.UpdateAsync изменяет свойства этого же объекта.
+
             await _dbService.UpdateAsync(exerciseToUpdate);
             
             _mockDbContext.Verify(m => m.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
+            
             var updatedInList = _exerciseList.FirstOrDefault(e => e.ExerciseID == 1);
             Assert.IsNotNull(updatedInList);
             Assert.AreEqual("Обновленные Приседания", updatedInList.Name);
-            Assert.AreEqual("С весом", updatedInList.Description);
+            Assert.AreEqual("С большим весом", updatedInList.Description); // Проверяем обновленное описание
         }
 
-         [Test]
+        [Test]
         public async Task GetAllAsync_ReturnsAllExercisesFromList()
         {
             var result = await _dbService.GetAllAsync();
@@ -168,6 +162,7 @@ namespace FitnessTrainerPro.Tests
     }
 
     // Вспомогательные классы для мокирования асинхронных операций EF Core
+    // (TestAsyncEnumerator, TestAsyncEnumerable, TestAsyncQueryProvider остаются такими же, как я приводил ранее)
     public class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
     {
         private readonly IEnumerator<T> _inner;
@@ -199,7 +194,7 @@ namespace FitnessTrainerPro.Tests
         public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken)
         {
             var expectedResultType = typeof(TResult).GetGenericArguments()[0];
-            var executionResult = ((IQueryProvider)this).Execute(expression); // Синхронное выполнение
+            var executionResult = ((IQueryProvider)this).Execute(expression); 
 
             return (TResult)typeof(Task).GetMethod(nameof(Task.FromResult))!
                 .MakeGenericMethod(expectedResultType)

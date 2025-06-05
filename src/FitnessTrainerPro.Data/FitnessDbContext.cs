@@ -8,7 +8,7 @@ namespace FitnessTrainerPro.Data
 {
     public class FitnessDbContext : DbContext
     {
-        // ИЗМЕНЕНО: Добавлено 'virtual'
+        // DbSet'ы должны быть virtual для возможности мокирования в тестах
         public virtual DbSet<Client> Clients { get; set; }
         public virtual DbSet<Exercise> Exercises { get; set; }
         public virtual DbSet<WorkoutProgram> WorkoutPrograms { get; set; }
@@ -16,35 +16,39 @@ namespace FitnessTrainerPro.Data
         public virtual DbSet<ClientAssignedProgram> ClientAssignedPrograms { get; set; }
         public virtual DbSet<ClientMeasurement> ClientMeasurements { get; set; }
 
+        // --- КОНСТРУКТОРЫ ---
+        // 1. Публичный конструктор без параметров.
+        // Он нужен для:
+        //    - Инструментов EF Core (например, для создания миграций, если не используется DI).
+        //    - Простого создания экземпляра `new FitnessDbContext()` в твоем UI-коде.
+        //    - Moq в тестах также сможет его использовать.
+        public FitnessDbContext() { } 
 
-        // Конструктор для Moq (и для DI, если будешь использовать)
-        // Если EF Core Tools жалуются на отсутствие конструктора без параметров при создании миграций,
-        // можно его оставить, но для моков лучше передавать options.
-        // public FitnessDbContext() { } 
-
-        // Этот конструктор нужен, чтобы Moq мог создать экземпляр,
-        // или если ты будешь использовать DI и передавать DbContextOptions.
-        // Если у тебя уже есть конструктор по умолчанию public FitnessDbContext() {},
-        // то для Moq можно его использовать, но для реального приложения лучше с options.
-        // Для миграций EF Core нужен либо конструктор без параметров, либо такой, который может быть вызван DI.
-        // Оставим твой OnConfiguring, но для моков этот конструктор может быть полезен,
-        // если бы мы не использовали мок самого FitnessDbContext, а реальный с InMemory-провайдером.
-        // Но так как мы мокаем FitnessDbContext целиком, наличие этого конструктора не так критично для тестов.
-        // Однако, если ты УЖЕ используешь конструктор по умолчанию для EF Core миграций,
-        // то оставь его, и Moq его подхватит.
-        
-        // Если у тебя есть конструктор public FitnessDbContext() {}, то Moq сможет его использовать.
-        // Если нет, и EF Core не жалуется на миграции, то все ок.
-        // Для полной уверенности, что Moq может создать экземпляр, можно добавить:
+        // 2. Публичный конструктор, принимающий DbContextOptions.
+        // Он нужен для:
+        //    - Настройки DbContext при использовании Dependency Injection (рекомендуемый подход в больших приложениях).
+        //    - Создания экземпляра DbContext с特定ными опциями в тестах (например, для InMemory базы данных).
         public FitnessDbContext(DbContextOptions<FitnessDbContext> options) : base(options) { }
-        protected FitnessDbContext() { } // Защищенный конструктор для Moq, если DbContextOptions не нужны для мока
+        
+        // Защищенный конструктор `protected FitnessDbContext() { }` больше не нужен,
+        // так как у нас есть публичный конструктор без параметров.
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            // Этот метод вызывается, если DbContext создается БЕЗ передачи опций в конструктор
+            // (т.е. когда используется `new FitnessDbContext()`).
+            // Если опции переданы через конструктор (например, при DI или из тестов для InMemory),
+            // то optionsBuilder.IsConfigured будет true, и этот блок не выполнится.
             if (!optionsBuilder.IsConfigured)
             {
+                // Твой код для определения пути к БД - оставляем как есть
                 string projectRootPathAttempt = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..")); 
                 string dbFolderPath = Path.Combine(projectRootPathAttempt, "Database");
+                
+                // Для большей предсказуемости и если вышеописанный способ определения корня проекта
+                // не всегда корректно работает (особенно при запуске тестов или EF Core команд),
+                // лучше использовать более явный или надежный способ определения dbFolderPath.
+                // Но твой захардкоженный путь пока оставляем для консистентности.
                 dbFolderPath = @"C:\Users\lazaa\Desktop\proj1\FitnessTrainerPro\Database"; 
 
                 if (!Directory.Exists(dbFolderPath))
@@ -60,7 +64,8 @@ namespace FitnessTrainerPro.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); 
-            // ... (твои существующие конфигурации связей остаются без изменений) ...
+            
+            // Конфигурация связей (Fluent API)
             // Связь WorkoutProgram <-> ProgramExercise 
             modelBuilder.Entity<ProgramExercise>()
                 .HasOne(pe => pe.WorkoutProgram)
@@ -70,7 +75,7 @@ namespace FitnessTrainerPro.Data
             // Связь Exercise <-> ProgramExercise 
             modelBuilder.Entity<ProgramExercise>()
                 .HasOne(pe => pe.Exercise)
-                .WithMany() 
+                .WithMany() // Если у Exercise нет ICollection<ProgramExercise>
                 .HasForeignKey(pe => pe.ExerciseID);
 
             // Связь Client <-> ClientAssignedProgram 
