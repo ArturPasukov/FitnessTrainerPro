@@ -1,6 +1,7 @@
 using NUnit.Framework;
-using FitnessTrainerPro.UI.Converters; // Путь к твоим конвертерам
-using System.Globalization; // Для CultureInfo
+using FitnessTrainerPro.UI.Converters; // Убедись, что путь к твоим конвертерам правильный
+using System.Globalization;
+using System; // Для typeof(bool)
 
 namespace FitnessTrainerPro.Tests
 {
@@ -12,10 +13,11 @@ namespace FitnessTrainerPro.Tests
         {
             // Arrange
             var converter = new IsNullOrEmptyStringConverter();
-            string? testValue = null;
+            string? testValue = null; // object value может быть null
 
             // Act
-            bool result = (bool)converter.Convert(testValue, typeof(bool), null, CultureInfo.CurrentCulture);
+            // parameter и culture могут быть null, если конвертер их не использует
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!; 
 
             // Assert
             Assert.IsTrue(result);
@@ -29,7 +31,7 @@ namespace FitnessTrainerPro.Tests
             string testValue = "";
 
             // Act
-            bool result = (bool)converter.Convert(testValue, typeof(bool), null, CultureInfo.CurrentCulture);
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!;
 
             // Assert
             Assert.IsTrue(result);
@@ -43,7 +45,7 @@ namespace FitnessTrainerPro.Tests
             string testValue = "some text";
 
             // Act
-            bool result = (bool)converter.Convert(testValue, typeof(bool), null, CultureInfo.CurrentCulture);
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!;
 
             // Assert
             Assert.IsFalse(result);
@@ -57,7 +59,7 @@ namespace FitnessTrainerPro.Tests
             string testValue = "hello";
 
             // Act
-            bool result = (bool)converter.Convert(testValue, typeof(bool), null, CultureInfo.CurrentCulture);
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!;
 
             // Assert
             Assert.IsTrue(result);
@@ -71,7 +73,21 @@ namespace FitnessTrainerPro.Tests
             string testValue = "";
 
             // Act
-            bool result = (bool)converter.Convert(testValue, typeof(bool), null, CultureInfo.CurrentCulture);
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!;
+
+            // Assert
+            Assert.IsFalse(result);
+        }
+
+        [Test]
+        public void IsNotNullOrEmptyToBoolConverter_NullString_ReturnsFalse() // Дополнительный тест для null
+        {
+            // Arrange
+            var converter = new IsNotNullOrEmptyToBoolConverter();
+            string? testValue = null;
+
+            // Act
+            bool result = (bool)converter.Convert(testValue, typeof(bool), null!, CultureInfo.InvariantCulture)!;
 
             // Assert
             Assert.IsFalse(result);
