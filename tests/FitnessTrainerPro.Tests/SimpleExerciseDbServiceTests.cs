@@ -13,7 +13,10 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore.ChangeTracking; 
-using Microsoft.EntityFrameworkCore.Query;         
+using Microsoft.EntityFrameworkCore.Query;      
+
+using FitnessTrainerPro.Core.Services; // Для ISimpleExerciseDbService
+using FitnessTrainerPro.Data.Services;   // Для SimpleExerciseDbService
 
 // ПРЕДПОЛАГАЕТСЯ, ЧТО КЛАССЫ ISimpleExerciseDbService и SimpleExerciseDbService УЖЕ СУЩЕСТВУЮТ
 // ISimpleExerciseDbService в FitnessTrainerPro.Core/Services/
