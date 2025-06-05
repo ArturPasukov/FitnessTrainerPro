@@ -51,13 +51,7 @@ namespace FitnessTrainerPro.Tests
             // ИСПРАВЛЕННЫЙ МОК ДЛЯ AddAsync
             _mockDbSet.Setup(d => d.AddAsync(It.IsAny<Exercise>(), It.IsAny<CancellationToken>()))
                 .Callback<Exercise, CancellationToken>((ex, ct) => _exerciseList.Add(ex))
-                .Returns((Exercise ex, CancellationToken ct) =>
-                {
-                    var mockEntityEntry = new Mock<EntityEntry<Exercise>>();
-                    mockEntityEntry.Setup(e => e.Entity).Returns(ex);
-                    mockEntityEntry.Setup(e => e.State).Returns(EntityState.Added);
-                    return ValueTask.FromResult(mockEntityEntry.Object);
-                });
+                .Returns(ValueTask.FromResult<EntityEntry<Exercise>>(result: null!)); 
 
 
             _mockDbSet.Setup(d => d.Remove(It.IsAny<Exercise>()))
@@ -73,7 +67,6 @@ namespace FitnessTrainerPro.Tests
             _mockDbContext.Setup(c => c.Exercises).Returns(_mockDbSet.Object);
             _mockDbContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
             
-            // Мок для Entry() нам не нужен, если UpdateAsync в сервисе напрямую меняет свойства existing
             _dbService = new SimpleExerciseDbService(_mockDbContext.Object); 
         }
 
@@ -101,6 +94,7 @@ namespace FitnessTrainerPro.Tests
         public async Task UpdateAsync_ExerciseExists_UpdatesExerciseInContext()
         {
             var exerciseToUpdate = new Exercise { ExerciseID = 1, Name = "Обновленные Приседания", Description = "С большим весом" };
+            // Предполагается, что SimpleExerciseDbService.UpdateAsync изменен для прямого обновления свойств
             await _dbService.UpdateAsync(exerciseToUpdate);
             
             _mockDbContext.Verify(m => m.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once());
@@ -135,7 +129,7 @@ namespace FitnessTrainerPro.Tests
         }
     }
 
-    // Вспомогательные классы для мокирования асинхронных операций EF Core
+    // Вспомогательные классы (TestAsyncEnumerator, TestAsyncEnumerable, TestAsyncQueryProvider) остаются без изменений
     public class TestAsyncEnumerator<T> : IAsyncEnumerator<T>
     {
         private readonly IEnumerator<T> _inner;
