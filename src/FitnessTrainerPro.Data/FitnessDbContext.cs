@@ -8,18 +8,36 @@ namespace FitnessTrainerPro.Data
 {
     public class FitnessDbContext : DbContext
     {
-        // Существующие DbSet'ы
-        public DbSet<Client> Clients { get; set; }
-        public DbSet<Exercise> Exercises { get; set; }
-        public DbSet<WorkoutProgram> WorkoutPrograms { get; set; }
-        public DbSet<ProgramExercise> ProgramExercises { get; set; }
-        public DbSet<ClientAssignedProgram> ClientAssignedPrograms { get; set; }
-
-        // НОВЫЙ DbSet для замеров
-        public DbSet<ClientMeasurement> ClientMeasurements { get; set; }
+        // ИЗМЕНЕНО: Добавлено 'virtual'
+        public virtual DbSet<Client> Clients { get; set; }
+        public virtual DbSet<Exercise> Exercises { get; set; }
+        public virtual DbSet<WorkoutProgram> WorkoutPrograms { get; set; }
+        public virtual DbSet<ProgramExercise> ProgramExercises { get; set; }
+        public virtual DbSet<ClientAssignedProgram> ClientAssignedPrograms { get; set; }
+        public virtual DbSet<ClientMeasurement> ClientMeasurements { get; set; }
 
 
-        public FitnessDbContext() { }
+        // Конструктор для Moq (и для DI, если будешь использовать)
+        // Если EF Core Tools жалуются на отсутствие конструктора без параметров при создании миграций,
+        // можно его оставить, но для моков лучше передавать options.
+        // public FitnessDbContext() { } 
+
+        // Этот конструктор нужен, чтобы Moq мог создать экземпляр,
+        // или если ты будешь использовать DI и передавать DbContextOptions.
+        // Если у тебя уже есть конструктор по умолчанию public FitnessDbContext() {},
+        // то для Moq можно его использовать, но для реального приложения лучше с options.
+        // Для миграций EF Core нужен либо конструктор без параметров, либо такой, который может быть вызван DI.
+        // Оставим твой OnConfiguring, но для моков этот конструктор может быть полезен,
+        // если бы мы не использовали мок самого FitnessDbContext, а реальный с InMemory-провайдером.
+        // Но так как мы мокаем FitnessDbContext целиком, наличие этого конструктора не так критично для тестов.
+        // Однако, если ты УЖЕ используешь конструктор по умолчанию для EF Core миграций,
+        // то оставь его, и Moq его подхватит.
+        
+        // Если у тебя есть конструктор public FitnessDbContext() {}, то Moq сможет его использовать.
+        // Если нет, и EF Core не жалуется на миграции, то все ок.
+        // Для полной уверенности, что Moq может создать экземпляр, можно добавить:
+        public FitnessDbContext(DbContextOptions<FitnessDbContext> options) : base(options) { }
+        protected FitnessDbContext() { } // Защищенный конструктор для Moq, если DbContextOptions не нужны для мока
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -42,7 +60,7 @@ namespace FitnessTrainerPro.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder); 
-
+            // ... (твои существующие конфигурации связей остаются без изменений) ...
             // Связь WorkoutProgram <-> ProgramExercise 
             modelBuilder.Entity<ProgramExercise>()
                 .HasOne(pe => pe.WorkoutProgram)
@@ -67,11 +85,11 @@ namespace FitnessTrainerPro.Data
                 .WithMany(wp => wp.ClientAssignments) 
                 .HasForeignKey(cap => cap.ProgramID);
 
-            // НОВАЯ КОНФИГУРАЦИЯ СВЯЗИ Client <-> ClientMeasurement
+            // Связь Client <-> ClientMeasurement
             modelBuilder.Entity<ClientMeasurement>()
-                .HasOne(cm => cm.Client) // У ClientMeasurement есть свойство Client
-                .WithMany(c => c.Measurements) // У Client есть коллекция Measurements
-                .HasForeignKey(cm => cm.ClientID); // Внешний ключ в ClientMeasurement
+                .HasOne(cm => cm.Client) 
+                .WithMany(c => c.Measurements) 
+                .HasForeignKey(cm => cm.ClientID);
         }
     }
 }
